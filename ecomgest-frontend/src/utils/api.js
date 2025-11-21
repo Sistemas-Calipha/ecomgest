@@ -1,4 +1,4 @@
-const API_BASE_URL = "http://localhost:3000"; 
+const API_BASE_URL = "https://ecomgest-backend.onrender.com";
 
 async function apiRequest(method, url, data) {
   const token = localStorage.getItem("token");
@@ -26,7 +26,6 @@ async function apiRequest(method, url, data) {
   try {
     responseBody = await res.json();
   } catch (err) {
-    // Sin body
     responseBody = null;
   }
 
