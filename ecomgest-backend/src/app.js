@@ -67,16 +67,6 @@ app.use((req, res, next) => {
 });
 
 // ======================================================================
-//  FRONTEND ESTÁTICO
-// ======================================================================
-app.use(express.static(path.join(__dirname, "public")));
-
-// Ruta raíz → index.html
-app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "index.html"));
-});
-
-// ======================================================================
 //  RUTAS API (ORGANIZADAS POR MÓDULO)
 // ======================================================================
 app.use("/auth", authRoutes);
