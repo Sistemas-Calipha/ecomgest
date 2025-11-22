@@ -2,22 +2,53 @@
 
 import { useState } from "react";
 import { useTheme } from "../context/ThemeContext";
-import { Sun, Moon, LogOut } from "lucide-react";
+import { Sun, Moon } from "lucide-react";
+import { useLocation } from "react-router-dom";
 
-export default function Navbar({ onLogout, user }) {
+export default function Navbar({ user }) {
   const { theme, toggleTheme } = useTheme();
-  const [logoutLoading, setLogoutLoading] = useState(false);
+  const [logoutLoading] = useState(false);
 
   const username = user?.correo || "Usuario";
 
-  function handleLogout() {
-    if (logoutLoading) return;
-    setLogoutLoading(true);
+  // ============================================
+  //   BREADCRUMB DINÁMICO SEGÚN LA RUTA ACTUAL
+  // ============================================
+  const location = useLocation();
+  const path = location.pathname;
 
-    setTimeout(() => {
-      onLogout();
-    }, 250);
-  }
+  const routeTitles = {
+    "/": ["Dashboard"],
+
+    "/ventas": ["Ventas"],
+    "/ventas/ordenes": ["Ventas", "Órdenes"],
+    "/ventas/facturacion": ["Ventas", "Facturación"],
+    "/ventas/metodos-pago": ["Ventas", "Métodos de pago"],
+
+    "/inventario": ["Inventario"],
+    "/inventario/productos": ["Inventario", "Productos"],
+    "/inventario/movimientos": ["Inventario", "Movimientos"],
+    "/inventario/alertas": ["Inventario", "Alertas"],
+    "/inventario/proveedores": ["Inventario", "Proveedores"],
+
+    "/clientes": ["Clientes"],
+    "/clientes/crm": ["Clientes", "CRM"],
+    "/clientes/historial": ["Clientes", "Historial"],
+    "/clientes/segmentos": ["Clientes", "Segmentos"],
+
+    "/finanzas": ["Finanzas"],
+    "/finanzas/caja": ["Finanzas", "Caja"],
+    "/finanzas/pagos": ["Finanzas", "Pagos"],
+    "/finanzas/ingresos": ["Finanzas", "Ingresos"],
+    "/finanzas/cierres": ["Finanzas", "Cierres"],
+
+    "/configuracion": ["Configuración"],
+    "/configuracion/usuarios": ["Configuración", "Usuarios"],
+    "/configuracion/roles": ["Configuración", "Roles"],
+    "/configuracion/permisos": ["Configuración", "Permisos"],
+  };
+
+  const breadcrumb = routeTitles[path] || ["ECOMGEST"];
 
   return (
     <div
@@ -30,12 +61,25 @@ export default function Navbar({ onLogout, user }) {
         transition-all duration-300
       "
     >
-      {/* Título del módulo */}
-      <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
-        Dashboard
-      </h1>
+      {/* =======================================
+          BREADCRUMB (TÍTULO DEL MÓDULO)
+      ======================================== */}
+      <div className="flex flex-col">
+        <div className="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400">
+          {breadcrumb.map((item, i) => (
+            <span key={i}>
+              {item}
+              {i < breadcrumb.length - 1 && (
+                <span className="mx-1 opacity-70">/</span>
+              )}
+            </span>
+          ))}
+        </div>
+      </div>
 
-      {/* Controles */}
+      {/* =======================================
+          CONTROLES (MODO OSCURO + USUARIO)
+      ======================================== */}
       <div className="flex items-center gap-4">
 
         {/* MODO OSCURO */}
@@ -52,7 +96,7 @@ export default function Navbar({ onLogout, user }) {
           {theme === "dark" ? <Sun size={17} /> : <Moon size={17} />}
         </button>
 
-        {/* Nombre del usuario */}
+        {/* NOMBRE DEL USUARIO */}
         <span className="text-gray-700 dark:text-gray-300 font-medium">
           {username}
         </span>
