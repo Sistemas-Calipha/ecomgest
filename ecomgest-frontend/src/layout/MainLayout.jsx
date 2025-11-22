@@ -1,10 +1,17 @@
 // src/layout/MainLayout.jsx
 
-import { Outlet } from "react-router-dom";
+import { useState } from "react";
 import Sidebar from "../components/Sidebar";
 import Navbar from "../components/Navbar";
 
-export default function MainLayout({ onLogout, user }) {
+export default function MainLayout({ children, onLogout, user }) {
+  // Estado del sidebar colapsado
+  const [collapsed, setCollapsed] = useState(false);
+
+  function toggleSidebar() {
+    setCollapsed((prev) => !prev);
+  }
+
   return (
     <div
       className="
@@ -15,24 +22,33 @@ export default function MainLayout({ onLogout, user }) {
       "
     >
       {/* SIDEBAR */}
-      <Sidebar onLogout={onLogout} user={user} />
+      <Sidebar
+        collapsed={collapsed}
+        onToggleSidebar={toggleSidebar}
+        onLogout={onLogout}
+      />
 
       {/* CONTENEDOR PRINCIPAL */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-y-auto">
 
-        {/* NAVBAR */}
-        <Navbar onLogout={onLogout} user={user} />
+        {/* NAVBAR SUPERIOR */}
+        <Navbar
+          collapsed={collapsed}
+          onToggleSidebar={toggleSidebar}
+          user={user}
+          onLogout={onLogout}
+        />
 
-        {/* CONTENIDO DINÁMICO DEL ROUTER */}
+        {/* CONTENIDO */}
         <main
           className="
-            flex-1 overflow-y-auto p-6 
+            flex-1 p-6 
             bg-gray-100 dark:bg-gray-900
             text-gray-800 dark:text-gray-100
             transition-colors duration-300
           "
         >
-          <Outlet />
+          {children}
         </main>
       </div>
     </div>

@@ -9,12 +9,15 @@ import {
   DollarSign,
   Settings,
   LogOut,
-  ChevronDown
+  ChevronDown,
+  Menu
 } from "lucide-react";
+
 import { Link, useLocation } from "react-router-dom";
 
-export default function Sidebar({ onLogout }) {
+export default function Sidebar({ collapsed, onToggleSidebar, onLogout }) {
   const location = useLocation();
+
   const [open, setOpen] = useState({
     ventas: false,
     inventario: false,
@@ -90,14 +93,35 @@ export default function Sidebar({ onLogout }) {
 
   return (
     <aside
-      className="
-        w-60 h-screen bg-slate-900 text-slate-200
+      className={`
+        h-screen bg-slate-900 text-slate-200
         flex flex-col justify-between border-r border-slate-800
-      "
+        transition-all duration-300 ease-in-out
+        ${collapsed ? "w-16" : "w-60"}
+      `}
     >
-      {/* LOGO */}
-      <div className="px-6 py-4 text-lg font-bold tracking-wide">
-        ECOMGEST
+
+      {/* HEADER */}
+      <div
+        className="
+          flex items-center justify-between
+          px-4 py-4
+          border-b border-slate-800
+        "
+      >
+        {!collapsed && (
+          <span className="text-lg font-bold tracking-wide">
+            ECOMGEST
+          </span>
+        )}
+
+        {/* Botón hamburguesa */}
+        <button
+          onClick={onToggleSidebar}
+          className="p-2 rounded-lg hover:bg-slate-800 text-slate-300"
+        >
+          <Menu size={20} />
+        </button>
       </div>
 
       {/* MENÚ */}
@@ -119,28 +143,32 @@ export default function Sidebar({ onLogout }) {
               >
                 <div className="flex items-center gap-3">
                   {item.icon}
-                  {!hasChildren ? (
-                    <Link to={item.to}>{item.label}</Link>
-                  ) : (
-                    <span>{item.label}</span>
-                  )}
+
+                  {/* Ocultar texto si está colapsado */}
+                  {!collapsed ? (
+                    !hasChildren ? (
+                      <Link to={item.to}>{item.label}</Link>
+                    ) : (
+                      <span>{item.label}</span>
+                    )
+                  ) : null}
                 </div>
 
-                {/* Chevron minimalista */}
-                {hasChildren && (
+                {/* CHEVRON — solo visible cuando no está colapsado */}
+                {hasChildren && !collapsed && (
                   <ChevronDown
                     size={17}
                     className={`
                       transition-transform duration-200
                       ${isOpen ? "rotate-180" : "rotate-0"}
-                      text-slate-400 group-hover:text-white
+                      text-slate-400
                     `}
                   />
                 )}
               </button>
 
-              {/* Submenú */}
-              {hasChildren && isOpen && (
+              {/* SUBMENÚ */}
+              {hasChildren && isOpen && !collapsed && (
                 <div className="ml-8 mt-1 space-y-1 border-l border-slate-700 pl-3">
                   {item.children.map((sub) => (
                     <Link
@@ -177,7 +205,7 @@ export default function Sidebar({ onLogout }) {
           "
         >
           <LogOut size={18} />
-          Cerrar sesión
+          {!collapsed && "Cerrar sesión"}
         </button>
       </div>
     </aside>
