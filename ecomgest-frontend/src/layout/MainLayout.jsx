@@ -2,8 +2,9 @@
 
 import Sidebar from "../components/Sidebar";
 import Navbar from "../components/Navbar";
+import { Outlet } from "react-router-dom";
 
-export default function MainLayout({ children, onLogout }) {
+export default function MainLayout({ onLogout, user }) {
   return (
     <div
       className="
@@ -14,15 +15,15 @@ export default function MainLayout({ children, onLogout }) {
       "
     >
       {/* SIDEBAR */}
-      <Sidebar onLogout={onLogout} />
+      <Sidebar onLogout={onLogout} user={user} />
 
       {/* CONTENEDOR PRINCIPAL */}
       <div className="flex-1 flex flex-col overflow-y-auto">
 
         {/* NAVBAR SUPERIOR */}
-        <Navbar onLogout={onLogout} />
+        <Navbar onLogout={onLogout} user={user} />
 
-        {/* CONTENIDO */}
+        {/* CONTENIDO DE LAS RUTAS (Dashboard, Ventas, etc.) */}
         <main
           className="
             flex-1 p-6 
@@ -31,7 +32,7 @@ export default function MainLayout({ children, onLogout }) {
             transition-colors duration-300
           "
         >
-          {children}
+          <Outlet />
         </main>
       </div>
     </div>
