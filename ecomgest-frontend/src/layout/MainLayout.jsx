@@ -1,17 +1,10 @@
 // src/layout/MainLayout.jsx
 
-import { useState } from "react";
 import Sidebar from "../components/Sidebar";
 import Navbar from "../components/Navbar";
+import { Outlet } from "react-router-dom";
 
-export default function MainLayout({ children, onLogout, user }) {
-  // Estado del sidebar colapsado
-  const [collapsed, setCollapsed] = useState(false);
-
-  function toggleSidebar() {
-    setCollapsed((prev) => !prev);
-  }
-
+export default function MainLayout({ onLogout, user }) {
   return (
     <div
       className="
@@ -21,34 +14,25 @@ export default function MainLayout({ children, onLogout, user }) {
         transition-colors duration-300
       "
     >
-      {/* SIDEBAR */}
-      <Sidebar
-        collapsed={collapsed}
-        onToggleSidebar={toggleSidebar}
-        onLogout={onLogout}
-      />
+      {/* SIDEBAR PREMIUM */}
+      <Sidebar onLogout={onLogout} user={user} />
 
       {/* CONTENEDOR PRINCIPAL */}
-      <div className="flex-1 flex flex-col overflow-y-auto">
-
+      <div className="flex-1 flex flex-col overflow-hidden">
         {/* NAVBAR SUPERIOR */}
-        <Navbar
-          collapsed={collapsed}
-          onToggleSidebar={toggleSidebar}
-          user={user}
-          onLogout={onLogout}
-        />
+        <Navbar onLogout={onLogout} user={user} />
 
-        {/* CONTENIDO */}
+        {/* CONTENIDO DE LAS RUTAS */}
         <main
           className="
             flex-1 p-6 
             bg-gray-100 dark:bg-gray-900
             text-gray-800 dark:text-gray-100
+            overflow-y-auto
             transition-colors duration-300
           "
         >
-          {children}
+          <Outlet />
         </main>
       </div>
     </div>
