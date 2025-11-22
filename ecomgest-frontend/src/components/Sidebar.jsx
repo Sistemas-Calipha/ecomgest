@@ -94,6 +94,7 @@ export default function Sidebar({ onLogout, user }) {
         { label: "Usuarios", to: "/configuracion/usuarios" },
         { label: "Roles", to: "/configuracion/roles" },
         { label: "Permisos", to: "/configuracion/permisos" },
+        { label: "Dashboard", to: "/configuracion/dashboard" },
       ],
     },
   ];

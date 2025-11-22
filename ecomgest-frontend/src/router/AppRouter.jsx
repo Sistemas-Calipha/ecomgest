@@ -34,6 +34,7 @@ import ConfiguracionIndex from "../pages/Configuracion";
 import ConfigUsuarios from "../pages/Configuracion/Usuarios";
 import ConfigRoles from "../pages/Configuracion/Roles";
 import ConfigPermisos from "../pages/Configuracion/Permisos";
+import ConfigDashboard from "../pages/Configuracion/DashboardConfig";
 
 export default function AppRouter({
   user,
@@ -115,6 +116,7 @@ export default function AppRouter({
           <Route path="configuracion/usuarios" element={<ConfigUsuarios />} />
           <Route path="configuracion/roles" element={<ConfigRoles />} />
           <Route path="configuracion/permisos" element={<ConfigPermisos />} />
+          <Route path="configuracion/dashboard" element={<ConfigDashboard />} /> 
         </Route>
 
         {/* fallback */}
