@@ -96,12 +96,7 @@ function SidebarItem({ label, icon, collapsed }) {
       {!collapsed && (
         <span className="text-sm font-medium">{label}</span>
       )}
-
-      {collapsed && (
-        <div className="w-full text-center text-gray-400 text-xs font-semibold">
-          {label[0]}
-        </div>
-      )}
     </div>
   );
 }
+
