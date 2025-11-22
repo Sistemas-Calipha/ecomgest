@@ -1,4 +1,4 @@
-// src/pages/AdminEmpresas.jsx
+// src/old/AdminEmpresas.jsx
 
 import { useState } from "react";
 import PageTitle from "../components/ui/PageTitle";
