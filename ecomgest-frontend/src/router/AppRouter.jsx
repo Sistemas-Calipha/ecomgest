@@ -35,28 +35,41 @@ import ConfigUsuarios from "../pages/Configuracion/Usuarios";
 import ConfigRoles from "../pages/Configuracion/Roles";
 import ConfigPermisos from "../pages/Configuracion/Permisos";
 
-export default function AppRouter({ user, pendingUser, onLogin, onCompanySelected, onLogout }) {
+export default function AppRouter({
+  user,
+  pendingUser,
+  onLogin,
+  onCompanySelected,
+  onLogout
+}) {
   return (
     <BrowserRouter>
       <Routes>
 
-        {/* LOGIN SIEMPRE VISIBLE */}
+        {/* LOGIN */}
         <Route
           path="/login"
           element={
             !user && !pendingUser
               ? <Login onLogin={onLogin} />
-              : <Navigate to="/" replace />
+              : <Navigate to="/select-company" replace />
           }
         />
 
-        {/* SELECT COMPANY */}
+        {/* SELECT COMPANY – SIEMPRE SE DEBE PASAR POR AQUÍ */}
         <Route
           path="/select-company"
           element={
-            pendingUser && !user
-              ? <SelectCompany user={pendingUser} onCompanySelected={onCompanySelected} />
-              : <Navigate to="/" replace />
+            pendingUser
+              ? (
+                <SelectCompany
+                  user={pendingUser}
+                  onCompanySelected={onCompanySelected}
+                />
+              )
+              : user
+              ? <Navigate to="/" replace />
+              : <Navigate to="/login" replace />
           }
         />
 

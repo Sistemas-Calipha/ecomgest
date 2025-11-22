@@ -1,3 +1,4 @@
+// src/pages/SelectCompany.jsx
 import { useState } from "react";
 import api from "../utils/api";
 
@@ -15,42 +16,18 @@ export default function SelectCompany({ user, onCompanySelected }) {
         companyId: company.empresa_id,
       });
 
-      const data = res;
-
-      if (!data || !data.token) {
+      if (!res?.token) {
         setError("Respuesta inválida del servidor.");
         setLoading(false);
         return;
       }
 
-      // ------------------------------------------------------
-      // 🔥 TOKEN FINAL (empresa + rol) → Guardar como sesión activa
-      // ------------------------------------------------------
-      sessionStorage.setItem("token", data.token);
-      sessionStorage.setItem(
-        "userData",
-        JSON.stringify({
-          id: user.id,
-          correo: user.correo,
-          company: {
-            id: company.empresa_id,
-            nombre: company.empresa_nombre,
-          },
-          role: {
-            id: company.rol_id,
-            nombre: company.rol_nombre,
-          },
-        })
-      );
-
-      sessionStorage.removeItem("pendingUser");
-
-      // Notificar al padre (solo se envía el token final)
-      onCompanySelected(data.token);
+      // Mandamos sólo el token final al App.jsx
+      onCompanySelected(res.token);
 
     } catch (err) {
       console.error("❌ Error seleccionando empresa:", err);
-      setError("Error al seleccionar empresa.");
+      setError("No se pudo seleccionar la empresa.");
     }
 
     setLoading(false);
@@ -59,20 +36,13 @@ export default function SelectCompany({ user, onCompanySelected }) {
   return (
     <div className="flex items-center justify-center h-screen bg-gray-100 px-6">
       <div className="bg-white p-8 rounded-xl shadow-md w-[400px]">
+
         <h2 className="text-2xl font-bold text-center mb-6">
           Selecciona una empresa
         </h2>
 
         {error && (
-          <p className="text-red-500 mb-4 text-center font-medium">
-            {error}
-          </p>
-        )}
-
-        {user.empresas?.length === 0 && (
-          <p className="text-center text-gray-600">
-            No tienes empresas asociadas.
-          </p>
+          <p className="text-red-500 mb-4 text-center font-medium">{error}</p>
         )}
 
         {user.empresas?.map((empresa) => (
@@ -80,12 +50,14 @@ export default function SelectCompany({ user, onCompanySelected }) {
             key={empresa.empresa_id}
             disabled={loading}
             onClick={() => handleSelect(empresa)}
-            className="w-full mb-3 bg-purple-600 hover:bg-purple-700 text-white py-2 rounded transition disabled:opacity-50"
+            className="w-full mb-3 bg-purple-600 hover:bg-purple-700 
+                       text-white py-2 rounded transition"
           >
             {empresa.empresa_nombre}
             <span className="opacity-80"> — {empresa.rol_nombre}</span>
           </button>
         ))}
+
       </div>
     </div>
   );
