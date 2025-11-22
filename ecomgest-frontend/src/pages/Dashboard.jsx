@@ -119,21 +119,6 @@ export default function Dashboard({ user, onLogout }) {
               <button className="px-4 py-2 text-xs rounded-xl bg-white/60 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 backdrop-blur shadow-sm hover:shadow-md transition">
                 Ver actividad
               </button>
-
-              <button
-                onClick={handleLogoutClick}
-                disabled={logoutLoading}
-                className="
-                  px-4 py-2 text-xs font-semibold rounded-xl 
-                  bg-rose-600 text-white 
-                  hover:bg-rose-700 
-                  shadow-sm hover:shadow-lg 
-                  transition
-                  disabled:opacity-50 disabled:cursor-not-allowed
-                "
-              >
-                {logoutLoading ? "Saliendo..." : "Cerrar sesión"}
-              </button>
             </div>
 
           </div>
