@@ -1,65 +1,61 @@
 // src/components/Navbar.jsx
 
-import { LogOut } from "lucide-react";
+import { useTheme } from "../context/ThemeContext";
+import { Sun, Moon } from "lucide-react";
 
 export default function Navbar({ onLogout }) {
+  const { theme, toggleTheme } = useTheme();
+
   return (
-    <header
+    <div
       className="
-        w-full h-16
-        backdrop-blur-md bg-white/80
-        border-b border-gray-200
-        flex items-center justify-between
-        px-6
+        w-full h-16 flex items-center justify-between px-6
         sticky top-0 z-50
-        shadow-sm
+        backdrop-blur-md
+        bg-white/80 dark:bg-gray-900/80
+        border-b border-gray-200 dark:border-gray-700
+        transition-all
       "
     >
-      {/* Título dinámico (si querés luego lo hacemos automático por ruta) */}
-      <h1 className="text-lg font-semibold text-gray-800 tracking-wide">
-        Panel principal
+      {/* Título del módulo */}
+      <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+        Dashboard
       </h1>
 
-      {/* --- USER SECTION --- */}
       <div className="flex items-center gap-4">
 
-        {/* Nombre del usuario */}
-        <div className="hidden sm:flex flex-col leading-tight text-right">
-          <span className="text-sm font-semibold text-gray-800">Erick</span>
-          <span className="text-xs text-gray-500">Administrador</span>
-        </div>
-
-        {/* Avatar minimalista */}
-        <div
+        {/* BOTÓN MODO OSCURO */}
+        <button
+          onClick={toggleTheme}
           className="
-            w-9 h-9 rounded-full
-            bg-gradient-to-br from-purple-500 to-purple-700
-            text-white flex items-center justify-center
-            font-semibold text-sm shadow
+            w-10 h-10 rounded-xl flex items-center justify-center
+            bg-gray-200 dark:bg-gray-700
+            text-gray-700 dark:text-gray-200
+            hover:bg-gray-300 dark:hover:bg-gray-600
+            transition-all
           "
         >
-          E
-        </div>
+          {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
+        </button>
 
-        {/* Botón de Logout */}
+        {/* Nombre del usuario */}
+        <span className="text-gray-700 dark:text-gray-300">Erick</span>
+
+        {/* Botón logout */}
         <button
           onClick={onLogout}
           className="
-            flex items-center gap-2
-            px-3 py-1.5
-            text-sm font-medium
-            rounded-xl
-            border border-gray-300
-            text-gray-700 bg-white
-            hover:bg-gray-100
-            transition-all
-            shadow-sm
+            text-sm border border-gray-300 dark:border-gray-600
+            rounded-full px-3 py-1
+            bg-white/60 dark:bg-gray-800/60
+            hover:bg-gray-100 dark:hover:bg-gray-700
+            transition
+            text-gray-700 dark:text-gray-200
           "
         >
-          <LogOut size={16} />
-          <span className="hidden sm:inline">Cerrar sesión</span>
+          Logout
         </button>
       </div>
-    </header>
+    </div>
   );
 }

@@ -1,36 +1,35 @@
 // src/components/ui/Table.jsx
 
-import { motion } from "framer-motion";
-import Skeleton from "./Skeleton";
-
 export default function Table({
   columns = [],
   data = [],
-  loading = false,
+  actions = null,
   compact = false,
-  actions = null, // acciones por fila opcionales
 }) {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.35, ease: "easeOut" }}
+    <div
       className="
-        w-full bg-white/80 backdrop-blur-sm
-        border border-gray-200 rounded-2xl
-        shadow-sm overflow-hidden
+        overflow-x-auto rounded-xl border
+        border-gray-200 dark:border-gray-700
+        bg-white/70 dark:bg-gray-800/60
+        backdrop-blur-sm shadow-sm transition
       "
     >
-      <table className="w-full text-left">
-        
-        {/* ===== HEADER ===== */}
-        <thead className="bg-gray-50/60 border-b border-gray-200">
+      <table className="w-full text-left border-collapse">
+        {/* HEADER */}
+        <thead
+          className="
+            bg-gray-100 dark:bg-gray-800
+            border-b border-gray-200 dark:border-gray-700
+          "
+        >
           <tr>
-            {columns.map((col, index) => (
+            {columns.map((col, i) => (
               <th
-                key={index}
+                key={i}
                 className={`
-                  px-4 py-3 text-xs font-semibold uppercase tracking-wide text-gray-600
+                  px-4 py-3 text-sm font-semibold
+                  text-gray-700 dark:text-gray-300
                   ${compact ? "py-2" : ""}
                 `}
               >
@@ -39,53 +38,47 @@ export default function Table({
             ))}
 
             {actions && (
-              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-gray-600 text-right">
+              <th
+                className="
+                  px-4 py-3 text-sm font-semibold
+                  text-gray-700 dark:text-gray-300
+                  text-right
+                "
+              >
                 Acciones
               </th>
             )}
           </tr>
         </thead>
 
-        {/* ===== BODY ===== */}
+        {/* BODY */}
         <tbody>
-          {loading ? (
-            [...Array(5)].map((_, i) => (
-              <tr key={i} className="border-b border-gray-100">
-                {columns.map((_, index) => (
-                  <td key={index} className="px-4 py-3">
-                    <Skeleton height="18px" />
-                  </td>
-                ))}
-                {actions && (
-                  <td className="px-4 py-3 text-right">
-                    <Skeleton width="60px" height="18px" />
-                  </td>
-                )}
-              </tr>
-            ))
-          ) : data.length === 0 ? (
+          {data.length === 0 ? (
             <tr>
               <td
                 colSpan={columns.length + (actions ? 1 : 0)}
-                className="py-8 text-center text-gray-500"
+                className="
+                  text-center py-6 text-gray-500 dark:text-gray-400
+                "
               >
-                No hay datos para mostrar.
+                No hay datos disponibles.
               </td>
             </tr>
           ) : (
-            data.map((row, i) => (
+            data.map((row, rowIndex) => (
               <tr
-                key={i}
+                key={rowIndex}
                 className="
-                  border-b border-gray-100
-                  hover:bg-gray-50/70 transition
+                  border-b border-gray-200 dark:border-gray-700
+                  hover:bg-gray-50 dark:hover:bg-gray-700/40
+                  transition
                 "
               >
-                {row.map((cell, index) => (
+                {row.map((cell, cellIndex) => (
                   <td
-                    key={index}
+                    key={cellIndex}
                     className={`
-                      px-4 py-3 text-gray-700 
+                      px-4 py-3 text-sm text-gray-800 dark:text-gray-200
                       ${compact ? "py-2" : ""}
                     `}
                   >
@@ -94,8 +87,13 @@ export default function Table({
                 ))}
 
                 {actions && (
-                  <td className="px-4 py-3 text-right">
-                    {actions(row, i)}
+                  <td
+                    className="
+                      px-4 py-3 text-sm 
+                      text-right
+                    "
+                  >
+                    {actions(row, rowIndex)}
                   </td>
                 )}
               </tr>
@@ -103,6 +101,6 @@ export default function Table({
           )}
         </tbody>
       </table>
-    </motion.div>
+    </div>
   );
 }
