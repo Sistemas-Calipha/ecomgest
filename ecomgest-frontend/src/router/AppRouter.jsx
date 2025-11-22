@@ -1,5 +1,4 @@
 // src/router/AppRouter.jsx
-
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
 import MainLayout from "../layout/MainLayout";
@@ -41,20 +40,27 @@ export default function AppRouter({ user, pendingUser, onLogin, onCompanySelecte
     <BrowserRouter>
       <Routes>
 
-        {/* ===========================
-            AUTENTICACIÓN
-        ============================ */}
-        {!user && !pendingUser && (
-          <Route path="/login" element={<Login onLogin={onLogin} />} />
-        )}
+        {/* LOGIN SIEMPRE VISIBLE */}
+        <Route
+          path="/login"
+          element={
+            !user && !pendingUser
+              ? <Login onLogin={onLogin} />
+              : <Navigate to="/" replace />
+          }
+        />
 
-        {pendingUser && !user && (
-          <Route path="/select-company" element={<SelectCompany user={pendingUser} onCompanySelected={onCompanySelected} />} />
-        )}
+        {/* SELECT COMPANY */}
+        <Route
+          path="/select-company"
+          element={
+            pendingUser && !user
+              ? <SelectCompany user={pendingUser} onCompanySelected={onCompanySelected} />
+              : <Navigate to="/" replace />
+          }
+        />
 
-        {/* ===========================
-            RUTAS PROTEGIDAS
-        ============================ */}
+        {/* RUTAS PROTEGIDAS */}
         <Route
           path="/"
           element={
@@ -65,41 +71,42 @@ export default function AppRouter({ user, pendingUser, onLogin, onCompanySelecte
         >
           <Route index element={<Dashboard user={user} />} />
 
-          {/* ------- VENTAS ------- */}
+          {/* ventas */}
           <Route path="ventas" element={<VentasIndex />} />
           <Route path="ventas/ordenes" element={<VentasOrdenes />} />
           <Route path="ventas/facturacion" element={<VentasFacturacion />} />
           <Route path="ventas/metodos-pago" element={<VentasPago />} />
 
-          {/* ------- INVENTARIO ------- */}
+          {/* inventario */}
           <Route path="inventario" element={<InventarioIndex />} />
           <Route path="inventario/productos" element={<InventarioProductos />} />
           <Route path="inventario/movimientos" element={<InventarioMovimientos />} />
           <Route path="inventario/alertas" element={<InventarioAlertas />} />
           <Route path="inventario/proveedores" element={<InventarioProveedores />} />
 
-          {/* ------- CLIENTES ------- */}
+          {/* clientes */}
           <Route path="clientes" element={<ClientesIndex />} />
           <Route path="clientes/crm" element={<ClientesCRM />} />
           <Route path="clientes/historial" element={<ClientesHistorial />} />
           <Route path="clientes/segmentos" element={<ClientesSegmentos />} />
 
-          {/* ------- FINANZAS ------- */}
+          {/* finanzas */}
           <Route path="finanzas" element={<FinanzasIndex />} />
           <Route path="finanzas/caja" element={<FinanzasCaja />} />
           <Route path="finanzas/pagos" element={<FinanzasPagos />} />
           <Route path="finanzas/ingresos" element={<FinanzasIngresos />} />
           <Route path="finanzas/cierres" element={<FinanzasCierres />} />
 
-          {/* ------- CONFIGURACIÓN ------- */}
+          {/* configuración */}
           <Route path="configuracion" element={<ConfiguracionIndex />} />
           <Route path="configuracion/usuarios" element={<ConfigUsuarios />} />
           <Route path="configuracion/roles" element={<ConfigRoles />} />
           <Route path="configuracion/permisos" element={<ConfigPermisos />} />
         </Route>
 
-        {/* Default */}
-        <Route path="*" element={<Navigate to="/" />} />
+        {/* fallback */}
+        <Route path="*" element={<Navigate to="/login" replace />} />
+
       </Routes>
     </BrowserRouter>
   );
