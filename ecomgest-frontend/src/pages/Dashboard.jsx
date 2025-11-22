@@ -1,7 +1,9 @@
 // src/pages/Dashboard.jsx
+
 import api from "../utils/api";
 
 import { useState, useEffect } from "react";
+
 import {
   DndContext,
   closestCenter,
@@ -9,12 +11,14 @@ import {
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
+
 import {
   SortableContext,
   useSortable,
   arrayMove,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
+
 import { CSS } from "@dnd-kit/utilities";
 
 import KPIBox from "../components/KPIBox";
@@ -36,9 +40,9 @@ import {
   Cell,
 } from "recharts";
 
-// =========================
-// Datos de ejemplo
-// =========================
+// ======================================================================
+// DATOS DEMO (hasta que conectemos módulos reales)
+// ======================================================================
 
 const ventasDiariasData = [
   { dia: "Lun", ventas: 12 },
@@ -73,7 +77,6 @@ const clientesNuevosData = [
 
 const COLORS = ["#22c55e", "#3b82f6", "#eab308", "#f97316"];
 
-// KPIs demo
 const KPIS_DEMO = [
   {
     id: 1,
@@ -109,77 +112,85 @@ const KPIS_DEMO = [
   },
 ];
 
-// =========================
-// Componente principal
-// =========================
+// ======================================================================
+// COMPONENTE PRINCIPAL
+// ======================================================================
 
 export default function Dashboard({ user }) {
   const [loadingKPIs, setLoadingKPIs] = useState(true);
   const [loadingWidgets, setLoadingWidgets] = useState(true);
 
-  // Orden inicial de widgets (modular arrastrable)
-const DEFAULT_WIDGETS = [
-  "kpis",
-  "ventas",
-  "ingresosGastos",
-  "stock",
-  "clientes",
-  "actividad",
-];
+  const DEFAULT_WIDGETS = [
+    "kpis",
+    "ventas",
+    "ingresosGastos",
+    "stock",
+    "clientes",
+    "actividad",
+  ];
 
-const [widgetsOrder, setWidgetsOrder] = useState(DEFAULT_WIDGETS);
+  const [widgetsOrder, setWidgetsOrder] = useState(DEFAULT_WIDGETS);
 
-useEffect(() => {
-  async function loadConfig() {
-    try {
-      const res = await api.get("/dashboard/my");
-      if (res.widgets && Array.isArray(res.widgets)) {
-        setWidgetsOrder(res.widgets);
+  // ✔ SENSORES DEL DND — SIN ESTO NO FUNCIONA NADA
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 5 },
+    })
+  );
+
+  // ✔ Cargar orden del backend
+  useEffect(() => {
+    async function loadConfig() {
+      try {
+        const res = await api.get("/dashboard/my");
+        if (res.widgets && Array.isArray(res.widgets)) {
+          setWidgetsOrder(res.widgets);
+        }
+      } catch (err) {
+        console.error("❌ No se pudo cargar config dashboard", err);
       }
-    } catch (err) {
-      console.error("❌ No se pudo cargar config dashboard", err);
     }
-  }
 
-  loadConfig();
-}, []);
+    loadConfig();
+  }, []);
 
-// Sensores para drag & drop
-const sensors = useSensors(
-  useSensor(PointerSensor, {
-    activationConstraint: { distance: 5 },
-  })
-);
-
+  // ✔ Simular carga estética
+  useEffect(() => {
+    const t1 = setTimeout(() => setLoadingKPIs(false), 600);
+    const t2 = setTimeout(() => setLoadingWidgets(false), 900);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
+  }, []);
 
   const empresaNombre = user?.company?.nombre || "Empresa";
   const rolNombre = user?.role?.nombre || "—";
-  const usuarioNombre = user?.nombre_completo || user?.correo || "Usuario";
+  const usuarioNombre = user?.correo || "Usuario";
 
+  // ✔ Guardar orden al arrastrar
+  async function handleDragEnd(event) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
 
-async function handleDragEnd(event) {
-  const { active, over } = event;
-  if (!over || active.id === over.id) return;
+    const newOrder = arrayMove(
+      widgetsOrder,
+      widgetsOrder.indexOf(active.id),
+      widgetsOrder.indexOf(over.id)
+    );
 
-  const newOrder = arrayMove(
-    widgetsOrder,
-    widgetsOrder.indexOf(active.id),
-    widgetsOrder.indexOf(over.id)
-  );
+    setWidgetsOrder(newOrder);
 
-  setWidgetsOrder(newOrder);
-
-  // Guardar en Supabase vía backend
-  try {
-    await api.post("/dashboard/save", { widgets: newOrder });
-  } catch (err) {
-    console.error("❌ Error guardando widgets:", err);
+    try {
+      await api.post("/dashboard/save", { widgets: newOrder });
+    } catch (err) {
+      console.error("❌ Error guardando widgets:", err);
+    }
   }
-}
-
 
   return (
     <div className="animate-fade space-y-8">
+
       {/* HEADER */}
       <section className="mb-2">
         <p className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-500 dark:text-slate-400">
@@ -219,19 +230,13 @@ async function handleDragEnd(event) {
   );
 }
 
-// =========================
-// Widget arrastrable
-// =========================
+// ======================================================================
+// WIDGET ARRASTRABLE
+// ======================================================================
 
 function SortableWidget({ id, children }) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -260,36 +265,31 @@ function SortableWidget({ id, children }) {
   );
 }
 
-// =========================
-// Contenido de cada widget
-// =========================
+// ======================================================================
+// CONTENIDO DE WIDGETS
+// ======================================================================
 
 function renderWidgetContent(id, { loadingKPIs, loadingWidgets }) {
   switch (id) {
     case "kpis":
       return <WidgetKPIs loading={loadingKPIs} />;
-
     case "ventas":
       return <WidgetVentas loading={loadingWidgets} />;
-
     case "ingresosGastos":
       return <WidgetIngresosGastos loading={loadingWidgets} />;
-
     case "stock":
       return <WidgetStock loading={loadingWidgets} />;
-
     case "clientes":
       return <WidgetClientes loading={loadingWidgets} />;
-
     case "actividad":
     default:
       return <WidgetActividad loading={loadingWidgets} />;
   }
 }
 
-// =========================
-// Widgets individuales
-// =========================
+// ======================================================================
+// WIDGETS INDIVIDUALES
+// ======================================================================
 
 function WidgetKPIs({ loading }) {
   return (
@@ -298,7 +298,9 @@ function WidgetKPIs({ loading }) {
         <h2 className="text-sm font-semibold text-slate-800 dark:text-white">
           Indicadores clave
         </h2>
-        <span className="text-xs text-slate-400">Demo – pronto en tiempo real</span>
+        <span className="text-xs text-slate-400">
+          Demo – pronto en tiempo real
+        </span>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -427,7 +429,7 @@ function WidgetStock({ loading }) {
               >
                 {stockPorCategoriaData.map((entry, index) => (
                   <Cell
-                    key={`cell-${index}`}
+                    key={index}
                     fill={COLORS[index % COLORS.length]}
                   />
                 ))}
