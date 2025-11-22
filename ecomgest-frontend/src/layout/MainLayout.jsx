@@ -1,8 +1,8 @@
 // src/layout/MainLayout.jsx
 
+import { Outlet } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import Navbar from "../components/Navbar";
-import { Outlet } from "react-router-dom";
 
 export default function MainLayout({ onLogout, user }) {
   return (
@@ -18,15 +18,15 @@ export default function MainLayout({ onLogout, user }) {
       <Sidebar onLogout={onLogout} user={user} />
 
       {/* CONTENEDOR PRINCIPAL */}
-      <div className="flex-1 flex flex-col overflow-y-auto">
+      <div className="flex-1 flex flex-col overflow-hidden">
 
-        {/* NAVBAR SUPERIOR */}
+        {/* NAVBAR */}
         <Navbar onLogout={onLogout} user={user} />
 
-        {/* CONTENIDO DE LAS RUTAS (Dashboard, Ventas, etc.) */}
+        {/* CONTENIDO DINÁMICO DEL ROUTER */}
         <main
           className="
-            flex-1 p-6 
+            flex-1 overflow-y-auto p-6 
             bg-gray-100 dark:bg-gray-900
             text-gray-800 dark:text-gray-100
             transition-colors duration-300
