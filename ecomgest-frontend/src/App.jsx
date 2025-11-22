@@ -4,7 +4,9 @@ import Login from "./pages/Login.jsx";
 import SelectCompany from "./pages/SelectCompany.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
 
-// Helper
+// ------------------------------------------------------
+// Helper para decodificar el JWT
+// ------------------------------------------------------
 function decodeToken(token) {
   try {
     const [, payload] = token.split(".");
@@ -16,67 +18,77 @@ function decodeToken(token) {
 
 export default function App() {
   const [token, setToken] = useState(null);
-  const [userData, setUserData] = useState(null);
   const [pendingUser, setPendingUser] = useState(null);
+  const [userData, setUserData] = useState(null);
 
-  // Cargar sesión del localStorage
+  // ------------------------------------------------------
+  // CARGAR SESIÓN DESDE sessionStorage
+  // ------------------------------------------------------
   useEffect(() => {
-    const savedToken = localStorage.getItem("token");
-    const savedPendingUser = localStorage.getItem("pendingUser");
-    const savedUserData = localStorage.getItem("userData");
+    const savedToken = sessionStorage.getItem("token");
+    const savedPendingUser = sessionStorage.getItem("pendingUser");
+    const savedUserData = sessionStorage.getItem("userData");
 
     if (savedToken) setToken(savedToken);
     if (savedPendingUser) setPendingUser(JSON.parse(savedPendingUser));
     if (savedUserData) setUserData(JSON.parse(savedUserData));
   }, []);
 
-  // LOGIN
-  function handleLogin({ token, user }) {
-    localStorage.setItem("token", token);
-    localStorage.setItem("pendingUser", JSON.stringify(user));
+  // ------------------------------------------------------
+  // LOGIN (usuario autenticado → falta elegir empresa)
+  // ------------------------------------------------------
+  function handleLogin(user) {
+    // Acá el token y user ya los guardó Login.jsx en sessionStorage
+    const token = sessionStorage.getItem("token");
 
     setToken(token);
     setPendingUser(user);
+
+    sessionStorage.setItem("pendingUser", JSON.stringify(user));
   }
 
-  // SELECT COMPANY – FINAL
-  function handleCompanySelected(token) {
-  const decoded = decodeToken(token);
+  // ------------------------------------------------------
+  // EMPRESA SELECCIONADA (token final con empresa + rol)
+  // ------------------------------------------------------
+  function handleCompanySelected(finalToken) {
+    const decoded = decodeToken(finalToken);
 
-  const formatted = {
-    id: decoded.id,
-    correo: decoded.correo,
-    company: {
-      id: decoded.empresa_id,
-      nombre: decoded.empresa_nombre || "Empresa",
-    },
-    role: {
-      id: decoded.rol_id,
-      nombre: decoded.rol_nombre,
-    }
-  };
+    const formatted = {
+      id: decoded.id,
+      correo: decoded.correo,
+      company: {
+        id: decoded.empresa_id,
+        nombre: decoded.empresa_nombre || "Empresa",
+      },
+      role: {
+        id: decoded.rol_id,
+        nombre: decoded.rol_nombre,
+      },
+    };
 
-  localStorage.setItem("token", token);
-  localStorage.setItem("userData", JSON.stringify(formatted));
-  localStorage.removeItem("pendingUser");
+    // Guardar token final + user final
+    sessionStorage.setItem("token", finalToken);
+    sessionStorage.setItem("userData", JSON.stringify(formatted));
+    sessionStorage.removeItem("pendingUser");
 
-  setToken(token);
-  setUserData(formatted);
-}
+    setToken(finalToken);
+    setUserData(formatted);
+    setPendingUser(null);
+  }
 
-
-  // LOGOUT
+  // ------------------------------------------------------
+  // LOGOUT TOTAL
+  // ------------------------------------------------------
   function handleLogout() {
-    localStorage.removeItem("token");
-    localStorage.removeItem("pendingUser");
-    localStorage.removeItem("userData");
-
+    sessionStorage.clear();
     setToken(null);
     setPendingUser(null);
     setUserData(null);
   }
 
-  // RENDERS ==================================================
+  // ------------------------------------------------------
+  // RENDERS
+  // ------------------------------------------------------
 
   // 1) Sin login
   if (!token && !pendingUser) {
@@ -93,7 +105,7 @@ export default function App() {
     );
   }
 
-  // 3) Empresa elegida → dashboard
+  // 3) Empresa elegida → sistema completo
   if (token && userData && userData.company) {
     return (
       <Dashboard 

@@ -23,19 +23,34 @@ export default function SelectCompany({ user, onCompanySelected }) {
         return;
       }
 
-      // 🔥 Nuevo token con empresa + rol en el payload
-onCompanySelected(data.token, {
-  empresa_id: company.empresa_id,
-  empresa_nombre: company.empresa_nombre,
-  rol_id: company.rol_id,
-  rol_nombre: company.rol_nombre,
-});
+      // ------------------------------------------------------
+      // 🔥 TOKEN FINAL (empresa + rol) → Guardar como sesión activa
+      // ------------------------------------------------------
+      sessionStorage.setItem("token", data.token);
+      sessionStorage.setItem(
+        "userData",
+        JSON.stringify({
+          id: user.id,
+          correo: user.correo,
+          company: {
+            id: company.empresa_id,
+            nombre: company.empresa_nombre,
+          },
+          role: {
+            id: company.rol_id,
+            nombre: company.rol_nombre,
+          },
+        })
+      );
 
+      sessionStorage.removeItem("pendingUser");
 
+      // Notificar al padre (solo se envía el token final)
+      onCompanySelected(data.token);
 
     } catch (err) {
       console.error("❌ Error seleccionando empresa:", err);
-      setError(err.message || "Error al seleccionar empresa.");
+      setError("Error al seleccionar empresa.");
     }
 
     setLoading(false);
@@ -44,7 +59,6 @@ onCompanySelected(data.token, {
   return (
     <div className="flex items-center justify-center h-screen bg-gray-100 px-6">
       <div className="bg-white p-8 rounded-xl shadow-md w-[400px]">
-
         <h2 className="text-2xl font-bold text-center mb-6">
           Selecciona una empresa
         </h2>
@@ -72,7 +86,6 @@ onCompanySelected(data.token, {
             <span className="opacity-80"> — {empresa.rol_nombre}</span>
           </button>
         ))}
-
       </div>
     </div>
   );

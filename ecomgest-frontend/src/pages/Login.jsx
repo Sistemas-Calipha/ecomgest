@@ -29,13 +29,18 @@ export default function Login({ onLogin }) {
         return;
       }
 
-      onLogin({
-        token: data.token,
-        user: data.user,
-      });
+      // ------------------------------------------------------
+      // 🔥 Seguridad fuerte → Guardar token en SESSION STORAGE
+      // ------------------------------------------------------
+      sessionStorage.setItem("token", data.token);
+      sessionStorage.setItem("pendingUser", JSON.stringify(data.user));
+
+      // Avisar al componente padre (solo envía el usuario)
+      onLogin(data.user);
+
     } catch (err) {
       console.error("❌ LOGIN ERROR:", err);
-      setError(err.response?.data?.error || "Credenciales inválidas");
+      setError("Credenciales inválidas");
     }
 
     setLoading(false);
@@ -89,7 +94,9 @@ export default function Login({ onLogin }) {
 
         {/* INPUT contraseña */}
         <div className="mb-6">
-          <label className="text-sm font-semibold text-white/90">Contraseña</label>
+          <label className="text-sm font-semibold text-white/90">
+            Contraseña
+          </label>
           <input
             type="password"
             placeholder="••••••••"

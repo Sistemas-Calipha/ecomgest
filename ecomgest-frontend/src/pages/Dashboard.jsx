@@ -6,12 +6,15 @@ import KPIBox from "../components/KPIBox";
 import Skeleton from "../components/ui/Skeleton";
 
 export default function Dashboard({ user, onLogout }) {
-  // Estados de carga para cada sección
+  // Estados de carga
   const [loadingKPIs, setLoadingKPIs] = useState(true);
   const [loadingModules, setLoadingModules] = useState(true);
   const [loadingActivity, setLoadingActivity] = useState(true);
 
-  // Simulación de carga
+  // Loading del botón SALIR
+  const [logoutLoading, setLogoutLoading] = useState(false);
+
+  // Simulación de carga suave para una mejor UX
   useEffect(() => {
     const t1 = setTimeout(() => setLoadingKPIs(false), 900);
     const t2 = setTimeout(() => setLoadingModules(false), 1100);
@@ -25,11 +28,22 @@ export default function Dashboard({ user, onLogout }) {
   }, []);
 
   // Datos del usuario
-  const empresaNombre = user?.empresa_nombre || "Empresa";
-  const rolNombre = user?.rol_nombre || "—";
-  const usuarioNombre = user?.nombre_completo || user?.correo || "Usuario";
+  const empresaNombre = user?.company?.nombre || "Empresa";
+  const rolNombre = user?.role?.nombre || "—";
+  const usuarioNombre = user?.correo || "Usuario";
 
-  // KPIs
+  // Manejo del logout premium 🌟
+  function handleLogoutClick() {
+    if (logoutLoading) return;
+    setLogoutLoading(true);
+
+    // Mini delay para una animación elegante
+    setTimeout(() => {
+      onLogout();
+    }, 250);
+  }
+
+  // KPIs de demo
   const kpis = [
     {
       id: 1,
@@ -65,6 +79,7 @@ export default function Dashboard({ user, onLogout }) {
     },
   ];
 
+  // Módulos demo
   const modules = [
     { id: 1, name: "Ventas", description: "Órdenes, facturación, medios de pago" },
     { id: 2, name: "Inventario", description: "Stock, movimientos, alertas de reposición" },
@@ -78,13 +93,12 @@ export default function Dashboard({ user, onLogout }) {
     <MainLayout onLogout={onLogout}>
       <div className="animate-fade">
 
-        {/* ==========================================
+        {/* =====================================================
             HEADER PREMIUM
-        ========================================== */}
+        ===================================================== */}
         <section className="mb-8">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            
-            {/* TITULOS */}
+
             <div className="space-y-1">
               <p className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-500 dark:text-slate-400">
                 Panel principal
@@ -107,20 +121,27 @@ export default function Dashboard({ user, onLogout }) {
               </button>
 
               <button
-                onClick={onLogout}
-                className="px-4 py-2 text-xs font-semibold rounded-xl bg-rose-600 text-white hover:bg-rose-700 shadow-sm hover:shadow-lg transition"
+                onClick={handleLogoutClick}
+                disabled={logoutLoading}
+                className="
+                  px-4 py-2 text-xs font-semibold rounded-xl 
+                  bg-rose-600 text-white 
+                  hover:bg-rose-700 
+                  shadow-sm hover:shadow-lg 
+                  transition
+                  disabled:opacity-50 disabled:cursor-not-allowed
+                "
               >
-                Cerrar sesión
+                {logoutLoading ? "Saliendo..." : "Cerrar sesión"}
               </button>
             </div>
 
           </div>
         </section>
 
-
-        {/* ==========================================
-            KPIs PREMIUM (Vidrio + Sombras)
-        ========================================== */}
+        {/* =====================================================
+            KPIs
+        ===================================================== */}
         <section className="mb-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           {loadingKPIs
             ? [...Array(4)].map((_, i) => (
@@ -133,27 +154,24 @@ export default function Dashboard({ user, onLogout }) {
                   <Skeleton className="w-full h-6" />
                 </div>
               ))
-            : kpis.map((k) => (
-                <KPIBox key={k.id} {...k} />
-              ))}
+            : kpis.map((k) => <KPIBox key={k.id} {...k} />)}
         </section>
 
-
-        {/* ==========================================
-            GRID PRINCIPAL (Actividad + Módulos)
-        ========================================== */}
+        {/* =====================================================
+            GRID PRINCIPAL
+        ===================================================== */}
         <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-          {/* ------------------------------------------
-              ACTIVIDAD RECIENTE (Bloque Premium)
-          ------------------------------------------ */}
+          {/* Actividad reciente */}
           <div className="lg:col-span-2 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/60 backdrop-blur shadow-sm p-5">
 
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-sm font-semibold text-slate-800 dark:text-white">
                 Actividad reciente
               </h2>
-              <span className="text-xs text-slate-400">Próximamente conectado a la API</span>
+              <span className="text-xs text-slate-400">
+                Próximamente conectado a la API
+              </span>
             </div>
 
             {loadingActivity ? (
@@ -170,10 +188,7 @@ export default function Dashboard({ user, onLogout }) {
             )}
           </div>
 
-
-          {/* ------------------------------------------
-              MÓDULOS
-          ------------------------------------------ */}
+          {/* Módulos */}
           <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/60 backdrop-blur shadow-sm p-5">
             <h2 className="text-sm font-semibold text-slate-800 dark:text-white mb-3">
               Módulos del sistema
@@ -197,7 +212,12 @@ export default function Dashboard({ user, onLogout }) {
                 : modules.map((m) => (
                     <li
                       key={m.id}
-                      className="rounded-xl border border-slate-200 dark:border-slate-700 p-3 hover:bg-slate-50/70 dark:hover:bg-slate-800/50 cursor-pointer transition"
+                      className="
+                        rounded-xl border border-slate-200 dark:border-slate-700 
+                        p-3 
+                        hover:bg-slate-50/70 dark:hover:bg-slate-800/50 
+                        cursor-pointer transition
+                      "
                     >
                       <p className="text-sm font-semibold text-slate-900 dark:text-white">
                         {m.name}

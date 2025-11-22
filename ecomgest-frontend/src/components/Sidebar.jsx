@@ -8,19 +8,21 @@ import {
   Package,
   Boxes,
   Users,
+  LogOut
 } from "lucide-react";
 import Skeleton from "../components/ui/Skeleton";
 
-export default function Sidebar() {
+export default function Sidebar({ onLogout, user }) {
   const [collapsed, setCollapsed] = useState(false);
 
-  // Simulación de carga de menú (para Skeleton)
+  // Simulación de carga
   const [loading, setLoading] = useState(true);
   useEffect(() => {
     const t = setTimeout(() => setLoading(false), 500);
     return () => clearTimeout(t);
   }, []);
 
+  // Menú principal
   const menuItems = [
     { label: "Dashboard", icon: <Home size={18} /> },
     { label: "Ventas", icon: <ShoppingCart size={18} /> },
@@ -28,6 +30,8 @@ export default function Sidebar() {
     { label: "Stock", icon: <Boxes size={18} /> },
     { label: "Clientes", icon: <Users size={18} /> },
   ];
+
+  const username = user?.correo || "Usuario";
 
   return (
     <div
@@ -55,8 +59,8 @@ export default function Sidebar() {
         </button>
       </div>
 
-      {/* MENU */}
-      <nav className="flex flex-col gap-1 p-3">
+      {/* MENU PRINCIPAL */}
+      <nav className="flex flex-col gap-1 p-3 flex-1">
         {loading
           ? [...Array(5)].map((_, i) => (
               <div
@@ -76,6 +80,29 @@ export default function Sidebar() {
               />
             ))}
       </nav>
+
+      {/* FOOTER → usuario + logout */}
+      <div className="p-3 border-t border-gray-800 dark:border-gray-700">
+        {!collapsed && (
+          <div className="mb-3 text-xs text-gray-400">
+            <span className="font-medium text-gray-200">{username}</span>
+          </div>
+        )}
+
+        <button
+          onClick={onLogout}
+          className="
+            w-full flex items-center gap-3
+            p-2 rounded 
+            hover:bg-red-600/20 text-red-400 
+            dark:hover:bg-red-700/20
+            transition cursor-pointer
+          "
+        >
+          <LogOut size={18} />
+          {!collapsed && <span className="text-sm font-medium">Cerrar sesión</span>}
+        </button>
+      </div>
     </div>
   );
 }
@@ -92,11 +119,7 @@ function SidebarItem({ label, icon, collapsed }) {
       title={collapsed ? label : ""}
     >
       {icon}
-
-      {!collapsed && (
-        <span className="text-sm font-medium">{label}</span>
-      )}
+      {!collapsed && <span className="text-sm font-medium">{label}</span>}
     </div>
   );
 }
-

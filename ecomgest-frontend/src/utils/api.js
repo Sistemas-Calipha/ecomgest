@@ -4,7 +4,7 @@ const API_BASE_URL =
 
 
 async function apiRequest(method, url, data) {
-  const token = localStorage.getItem("token");
+  const token = sessionStorage.getItem("token");
 
   const options = {
     method,
