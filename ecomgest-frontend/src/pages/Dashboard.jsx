@@ -1,4 +1,5 @@
 // src/pages/Dashboard.jsx
+import api from "../utils/api";
 
 import { useState, useEffect } from "react";
 import {
@@ -117,46 +118,65 @@ export default function Dashboard({ user }) {
   const [loadingWidgets, setLoadingWidgets] = useState(true);
 
   // Orden inicial de widgets (modular arrastrable)
-  const [widgetsOrder, setWidgetsOrder] = useState([
-    "kpis",
-    "ventas",
-    "ingresosGastos",
-    "stock",
-    "clientes",
-    "actividad",
-  ]);
+const DEFAULT_WIDGETS = [
+  "kpis",
+  "ventas",
+  "ingresosGastos",
+  "stock",
+  "clientes",
+  "actividad",
+];
 
-  // Sensores para drag & drop
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: { distance: 5 },
-    })
-  );
+const [widgetsOrder, setWidgetsOrder] = useState(DEFAULT_WIDGETS);
 
-  // Simular carga
-  useEffect(() => {
-    const t1 = setTimeout(() => setLoadingKPIs(false), 800);
-    const t2 = setTimeout(() => setLoadingWidgets(false), 1100);
-    return () => {
-      clearTimeout(t1);
-      clearTimeout(t2);
-    };
-  }, []);
+useEffect(() => {
+  async function loadConfig() {
+    try {
+      const res = await api.get("/dashboard/my");
+      if (res.widgets && Array.isArray(res.widgets)) {
+        setWidgetsOrder(res.widgets);
+      }
+    } catch (err) {
+      console.error("❌ No se pudo cargar config dashboard", err);
+    }
+  }
+
+  loadConfig();
+}, []);
+
+// Sensores para drag & drop
+const sensors = useSensors(
+  useSensor(PointerSensor, {
+    activationConstraint: { distance: 5 },
+  })
+);
+
 
   const empresaNombre = user?.company?.nombre || "Empresa";
   const rolNombre = user?.role?.nombre || "—";
-  const usuarioNombre = user?.correo || "Usuario";
+  const usuarioNombre = user?.nombre_completo || user?.correo || "Usuario";
 
-  function handleDragEnd(event) {
-    const { active, over } = event;
-    if (!over || active.id === over.id) return;
 
-    setWidgetsOrder((prev) => {
-      const oldIndex = prev.indexOf(active.id);
-      const newIndex = prev.indexOf(over.id);
-      return arrayMove(prev, oldIndex, newIndex);
-    });
+async function handleDragEnd(event) {
+  const { active, over } = event;
+  if (!over || active.id === over.id) return;
+
+  const newOrder = arrayMove(
+    widgetsOrder,
+    widgetsOrder.indexOf(active.id),
+    widgetsOrder.indexOf(over.id)
+  );
+
+  setWidgetsOrder(newOrder);
+
+  // Guardar en Supabase vía backend
+  try {
+    await api.post("/dashboard/save", { widgets: newOrder });
+  } catch (err) {
+    console.error("❌ Error guardando widgets:", err);
   }
+}
+
 
   return (
     <div className="animate-fade space-y-8">
