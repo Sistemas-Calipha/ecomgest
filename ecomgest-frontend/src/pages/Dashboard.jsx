@@ -1,6 +1,6 @@
 // src/pages/Dashboard.jsx
-import { useState, useEffect } from "react";
-import { useLocation } from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import api from "../utils/api";
 
 import {
@@ -159,6 +159,8 @@ const WIDGETS_META = [
 
 export default function Dashboard({ user }) {
   const location = useLocation();
+  const navigate = useNavigate();
+  const openedFromConfigRef = useRef(false);
 
   const [loadingKPIs, setLoadingKPIs] = useState(true);
   const [loadingWidgets, setLoadingWidgets] = useState(true);
@@ -201,7 +203,6 @@ export default function Dashboard({ user }) {
     async function loadConfig() {
       try {
         const res = await api.get("/dashboard/my");
-        // Soportamos res.config o res plano
         const cfg = res.config || res || {};
 
         const savedWidgets =
@@ -228,20 +229,30 @@ export default function Dashboard({ user }) {
   }, []);
 
   // --------------------------------------
-  // 3) Abrir modal si venimos de Configuración
+  // 3) Abrir modal si venimos de Configuración (una sola vez)
   // --------------------------------------
   useEffect(() => {
-    if (location.state && location.state.openDashboardConfig) {
+    if (
+      location.state?.openDashboardConfig &&
+      !openedFromConfigRef.current &&
+      !loadingConfig
+    ) {
+      openedFromConfigRef.current = true;
       setTempDisabled(disabledWidgets);
       setConfigModalOpen(true);
-      // No nos complicamos limpiando el state; con navegar de nuevo se pisa.
+
+      // Limpio el state de la URL para que no se reabra solo
+      navigate(location.pathname, { replace: true });
     }
-  }, [location.state, disabledWidgets]);
+  }, [location.state, disabledWidgets, loadingConfig, navigate, location.pathname]);
 
   // --------------------------------------
   // Guardar config en backend (orden + desactivados)
   // --------------------------------------
-  async function saveDashboardConfig(newOrder = widgetsOrder, newDisabled = disabledWidgets) {
+  async function saveDashboardConfig(
+    newOrder = widgetsOrder,
+    newDisabled = disabledWidgets
+  ) {
     try {
       await api.post("/dashboard/save", {
         widgets: newOrder,
@@ -281,10 +292,10 @@ export default function Dashboard({ user }) {
     setTempDisabled((prev) => {
       const isDisabled = prev.includes(id);
 
-      // Evitar que queden todos apagados
+      // Evitar que se apague el último widget
       const totalEnabled = DEFAULT_WIDGETS.length - prev.length;
       if (!isDisabled && totalEnabled <= 1) {
-        return prev; // no permitir apagar el último
+        return prev;
       }
 
       if (isDisabled) {
@@ -356,7 +367,6 @@ export default function Dashboard({ user }) {
 
       {/* CONTENEDOR DRAG & DROP */}
       {isLoadingAll ? (
-        // Skeleton general mientras baja la config
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
           {[...Array(4)].map((_, i) => (
             <section
@@ -402,8 +412,8 @@ export default function Dashboard({ user }) {
               Configurar widgets del dashboard
             </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
-              Activa o desactiva módulos. El orden lo puedes cambiar arrastrando
-              directamente en el dashboard.
+              Activa o desactiva módulos. El orden lo puedes cambiar
+              arrastrando directamente en el dashboard.
             </p>
 
             <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
@@ -808,3 +818,4 @@ function WidgetActividad({ loading }) {
     </div>
   );
 }
+
