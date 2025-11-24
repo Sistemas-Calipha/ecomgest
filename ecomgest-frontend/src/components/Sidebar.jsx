@@ -20,111 +20,104 @@ export default function Sidebar({ onLogout, user }) {
   const location = useLocation();
 
   const [open, setOpen] = useState({
-    sales: false,
-    inventory: false,
-    customers: false,
-    finance: false,
-    settings: false
+    ventas: false,
+    inventario: false,
+    clientes: false,
+    finanzas: false,
+    configuracion: false,
   });
 
   const [collapsed, setCollapsed] = useState(false);
   const [hovering, setHovering] = useState(false);
-
   const isCollapsed = collapsed && !hovering;
 
   function toggleSection(menu) {
     setOpen((prev) => ({ ...prev, [menu]: !prev[menu] }));
   }
 
-  const username = user?.correo || "User";
+  const username = user?.correo || "Usuario";
 
-  // ========================================================
-  // MENÚ PRINCIPAL
-  // ========================================================
+  // =====================================================
+  // MENÚ PRINCIPAL (ESPAÑOL + NUEVA SECCIÓN EMPRESAS)
+  // =====================================================
 
   const menuItems = [
     {
       id: "dashboard",
       label: "Dashboard",
       icon: <LayoutDashboard size={18} />,
-      to: "/"
+      to: "/",
     },
 
-    // COMPANIES (nuevo módulo)
     {
-      id: "companies",
-      label: "Companies",
+      id: "empresas",
+      label: "Empresas",
       icon: <Building2 size={18} />,
-      to: "/companies"
+      to: "/companies",
     },
 
-    // SALES
     {
-      id: "sales",
-      label: "Sales",
+      id: "ventas",
+      label: "Ventas",
       icon: <ShoppingCart size={18} />,
       children: [
-        { label: "Orders", to: "/sales/orders" },
-        { label: "Billing", to: "/sales/billing" },
-        { label: "Payment Methods", to: "/sales/payment-methods" }
-      ]
+        { label: "Órdenes", to: "/ventas/ordenes" },
+        { label: "Facturación", to: "/ventas/facturacion" },
+        { label: "Métodos de pago", to: "/ventas/metodos-pago" },
+      ],
     },
 
-    // INVENTORY
     {
-      id: "inventory",
-      label: "Inventory",
+      id: "inventario",
+      label: "Inventario",
       icon: <Package size={18} />,
       children: [
-        { label: "Products", to: "/inventory/products" },
-        { label: "Stock Movements", to: "/inventory/movements" },
-        { label: "Alerts", to: "/inventory/alerts" },
-        { label: "Suppliers", to: "/inventory/suppliers" }
-      ]
+        { label: "Productos", to: "/inventario/productos" },
+        { label: "Movimientos", to: "/inventario/movimientos" },
+        { label: "Alertas", to: "/inventario/alertas" },
+        { label: "Proveedores", to: "/inventario/proveedores" },
+      ],
     },
 
-    // CUSTOMERS
     {
-      id: "customers",
-      label: "Customers",
+      id: "clientes",
+      label: "Clientes",
       icon: <Users size={18} />,
       children: [
-        { label: "CRM", to: "/customers/crm" },
-        { label: "History", to: "/customers/history" },
-        { label: "Segments", to: "/customers/segments" }
-      ]
+        { label: "CRM", to: "/clientes/crm" },
+        { label: "Historial", to: "/clientes/historial" },
+        { label: "Segmentos", to: "/clientes/segmentos" },
+      ],
     },
 
-    // FINANCE
     {
-      id: "finance",
-      label: "Finance",
+      id: "finanzas",
+      label: "Finanzas",
       icon: <DollarSign size={18} />,
       children: [
-        { label: "Cash", to: "/finance/cash" },
-        { label: "Payments", to: "/finance/payments" },
-        { label: "Income", to: "/finance/income" },
-        { label: "Closings", to: "/finance/closings" }
-      ]
+        { label: "Caja", to: "/finanzas/caja" },
+        { label: "Pagos", to: "/finanzas/pagos" },
+        { label: "Ingresos", to: "/finanzas/ingresos" },
+        { label: "Cierres", to: "/finanzas/cierres" },
+      ],
     },
 
-    // SETTINGS
     {
-      id: "settings",
-      label: "Settings",
+      id: "configuracion",
+      label: "Configuración",
       icon: <Settings size={18} />,
       children: [
-        { label: "Users", to: "/settings/users" },
-        { label: "Roles", to: "/settings/roles" },
-        { label: "Permissions", to: "/settings/permissions" },
-        { label: "Dashboard", to: "/settings/dashboard" }
-      ]
-    }
+        { label: "Usuarios", to: "/configuracion/usuarios" },
+        { label: "Roles", to: "/configuracion/roles" },
+        { label: "Permisos", to: "/configuracion/permisos" },
+        { label: "Dashboard", to: "/configuracion/dashboard" },
+      ],
+    },
   ];
 
-  // ========================================================
+  // =====================================================
   // RENDER
-  // ========================================================
+  // =====================================================
 
   return (
     <aside
@@ -156,9 +149,11 @@ export default function Sidebar({ onLogout, user }) {
 
           {!isCollapsed && (
             <div className="flex flex-col">
-              <span className="text-sm font-semibold tracking-wide">ECOMGEST</span>
+              <span className="text-sm font-semibold tracking-wide">
+                ECOMGEST
+              </span>
               <span className="text-[10px] uppercase tracking-[0.18em] text-slate-400">
-                Admin Panel
+                Control central
               </span>
             </div>
           )}
@@ -174,31 +169,31 @@ export default function Sidebar({ onLogout, user }) {
             text-slate-300 hover:text-white
             transition-colors
           "
-          title={isCollapsed ? "Expand menu" : "Collapse menu"}
+          title={isCollapsed ? "Expandir menú" : "Colapsar menú"}
         >
           {isCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
         </button>
       </div>
 
-      {/* MENU */}
+      {/* MENÚ */}
       <nav className="flex-1 px-2 py-3 overflow-y-auto space-y-1">
         {menuItems.map((item) => {
           const hasChildren = !!item.children;
           const isOpen = open[item.id];
-
           const isActive =
-            item.to && location.pathname === item.to ||
+            (item.to && location.pathname === item.to) ||
             (!item.to && location.pathname.startsWith(`/${item.id}`));
 
           return (
             <div key={item.id} className="group">
-              {/* Item principal */}
+              {/* ITEM PRINCIPAL */}
               {hasChildren ? (
                 <button
                   onClick={() => toggleSection(item.id)}
                   className={`
                     w-full flex items-center justify-between
-                    px-2 py-2 rounded-lg transition-colors
+                    px-2 py-2 rounded-lg
+                    transition-colors
                     ${
                       isActive
                         ? "bg-slate-800 text-white"
@@ -243,10 +238,11 @@ export default function Sidebar({ onLogout, user }) {
                 </Link>
               )}
 
+              {/* SUBMENÚ */}
               {hasChildren && isOpen && !isCollapsed && (
                 <div className="ml-7 mt-1 space-y-1 border-l border-slate-800/70 pl-3">
                   {item.children.map((sub) => {
-                    const subActive = location.pathname === sub.to;
+                    const active = location.pathname === sub.to;
                     return (
                       <Link
                         key={sub.to}
@@ -254,7 +250,7 @@ export default function Sidebar({ onLogout, user }) {
                         className={`
                           block text-xs py-1.5 rounded transition-colors
                           ${
-                            subActive
+                            active
                               ? "text-white font-semibold"
                               : "text-slate-400 hover:text-white"
                           }
@@ -282,7 +278,7 @@ export default function Sidebar({ onLogout, user }) {
               <span className="text-xs font-medium truncate max-w-[9rem]">
                 {username}
               </span>
-              <span className="text-[10px] text-slate-500">Administrator</span>
+              <span className="text-[10px] text-slate-500">Administrador</span>
             </div>
           </div>
         )}
@@ -296,10 +292,10 @@ export default function Sidebar({ onLogout, user }) {
             border border-red-500/40 transition-colors
             ${isCollapsed ? "h-10 rounded-full" : "gap-2 px-3 py-2 rounded-lg"}
           `}
-          title="Log out"
+          title="Cerrar sesión"
         >
           <LogOut size={18} />
-          {!isCollapsed && <span className="text-sm">Log out</span>}
+          {!isCollapsed && <span className="text-sm">Cerrar sesión</span>}
         </button>
       </div>
     </aside>
