@@ -1,40 +1,26 @@
 // src/services/companies.service.js
 import supabase from "../config/supabase.js";
 
-// ======================================================
-// GET: listar todas las companies
-// ======================================================
-export const getCompanies = async () => {
+// =====================================
+// GET ALL
+// =====================================
+export async function getCompaniesService() {
   const { data, error } = await supabase
     .from("empresas")
     .select("*")
-    .order("created_at", { ascending: true });
+    .order("creado_en", { ascending: true });
 
   if (error) throw new Error(error.message);
   return data;
-};
+}
 
-// ======================================================
-// GET: una company por ID
-// ======================================================
-export const getCompanyById = async (id) => {
-  const { data, error } = await supabase
-    .from("empresas")
-    .select("*")
-    .eq("id", id)
-    .single();
-
-  if (error) throw new Error(error.message);
-  return data;
-};
-
-// ======================================================
-// POST: crear company
-// ======================================================
-export const createCompany = async ({ nombre, plan, estado }) => {
+// =====================================
+// CREATE
+// =====================================
+export async function createCompanyService({ nombre, plan, estado }) {
   const payload = {
     nombre,
-    plan,
+    plan: plan || "",
     estado: estado || "activa",
   };
 
@@ -46,19 +32,12 @@ export const createCompany = async ({ nombre, plan, estado }) => {
 
   if (error) throw new Error(error.message);
   return data;
-};
+}
 
-// ======================================================
-// PUT: actualizar company
-// ======================================================
-export const updateCompany = async (id, { nombre, plan, estado }) => {
-  const payload = {
-    nombre,
-    plan,
-    estado,
-    updated_at: new Date().toISOString(),
-  };
-
+// =====================================
+// UPDATE
+// =====================================
+export async function updateCompanyService(id, payload) {
   const { data, error } = await supabase
     .from("empresas")
     .update(payload)
@@ -68,12 +47,12 @@ export const updateCompany = async (id, { nombre, plan, estado }) => {
 
   if (error) throw new Error(error.message);
   return data;
-};
+}
 
-// ======================================================
-// DELETE: eliminar company
-// ======================================================
-export const deleteCompany = async (id) => {
+// =====================================
+// DELETE
+// =====================================
+export async function deleteCompanyService(id) {
   const { error } = await supabase
     .from("empresas")
     .delete()
@@ -81,4 +60,4 @@ export const deleteCompany = async (id) => {
 
   if (error) throw new Error(error.message);
   return true;
-};
+}

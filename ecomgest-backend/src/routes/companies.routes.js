@@ -1,14 +1,15 @@
 // src/routes/companies.routes.js
 import express from "express";
 
+// CONTROLADORES NUEVOS
 import {
   getCompanies,
-  getCompanyById,
   createCompany,
   updateCompany,
   deleteCompany,
-} from "../services/companies.service.js";
+} from "../controllers/companies.controller.js";
 
+// SERVICIOS EXISTENTES (para asignación de usuarios y roles)
 import {
   assignUserToCompany,
   getUsersByCompany,
@@ -21,109 +22,22 @@ const router = express.Router();
 // =======================================================
 // GET /companies  → list all companies
 // =======================================================
-router.get("/", async (req, res) => {
-  try {
-    const companies = await getCompanies();
-    return res.json({ companies });
-  } catch (err) {
-    console.error("❌ Error getting companies:", err.message);
-    return res
-      .status(500)
-      .json({ message: "Internal error", error: err.message });
-  }
-});
-
-// =======================================================
-// GET /companies/:id  → get single company
-// =======================================================
-router.get("/:id", async (req, res) => {
-  try {
-    const companyId = req.params.id;
-    const company = await getCompanyById(companyId);
-
-    return res.json({ company });
-  } catch (err) {
-    console.error("❌ Error getting company:", err.message);
-    return res
-      .status(500)
-      .json({ message: "Internal error", error: err.message });
-  }
-});
+router.get("/", getCompanies);
 
 // =======================================================
 // POST /companies  → create company
 // =======================================================
-router.post("/", async (req, res) => {
-  try {
-    const { nombre, cuit, estado } = req.body;
-
-    if (!nombre || !cuit) {
-      return res.status(400).json({
-        message: "nombre and cuit are required",
-      });
-    }
-
-    const company = await createCompany({ nombre, cuit, estado });
-
-    return res.status(201).json({
-      message: "Company created successfully",
-      company,
-    });
-  } catch (err) {
-    console.error("❌ Error creating company:", err.message);
-    return res
-      .status(500)
-      .json({ message: "Internal error", error: err.message });
-  }
-});
+router.post("/", createCompany);
 
 // =======================================================
 // PUT /companies/:id  → update company
 // =======================================================
-router.put("/:id", async (req, res) => {
-  try {
-    const companyId = req.params.id;
-    const { nombre, cuit, estado } = req.body;
-
-    if (!nombre || !cuit) {
-      return res.status(400).json({
-        message: "nombre and cuit are required",
-      });
-    }
-
-    const company = await updateCompany(companyId, { nombre, cuit, estado });
-
-    return res.json({
-      message: "Company updated successfully",
-      company,
-    });
-  } catch (err) {
-    console.error("❌ Error updating company:", err.message);
-    return res
-      .status(500)
-      .json({ message: "Internal error", error: err.message });
-  }
-});
+router.put("/:id", updateCompany);
 
 // =======================================================
 // DELETE /companies/:id  → delete company
 // =======================================================
-router.delete("/:id", async (req, res) => {
-  try {
-    const companyId = req.params.id;
-
-    await deleteCompany(companyId);
-
-    return res.json({
-      message: "Company deleted successfully",
-    });
-  } catch (err) {
-    console.error("❌ Error deleting company:", err.message);
-    return res
-      .status(500)
-      .json({ message: "Internal error", error: err.message });
-  }
-});
+router.delete("/:id", deleteCompany);
 
 // =======================================================
 // PUT /companies/assign-user  → assign user to company
@@ -145,10 +59,8 @@ router.put("/assign-user", async (req, res) => {
       user: updatedUser,
     });
   } catch (err) {
-    console.error("❌ Error assigning user to company:", err.message);
-    return res
-      .status(500)
-      .json({ message: "Internal error", error: err.message });
+    console.error("❌ Error assigning user:", err.message);
+    return res.status(500).json({ message: "Internal error", error: err.message });
   }
 });
 
@@ -168,9 +80,7 @@ router.get("/:id/users", async (req, res) => {
     });
   } catch (err) {
     console.error("❌ Error getting company users:", err.message);
-    return res
-      .status(500)
-      .json({ message: "Internal error", error: err.message });
+    return res.status(500).json({ message: "Internal error", error: err.message });
   }
 });
 
@@ -194,10 +104,8 @@ router.post("/assign-role", async (req, res) => {
       data: result,
     });
   } catch (err) {
-    console.error("❌ Error assigning role in company:", err.message);
-    return res
-      .status(500)
-      .json({ message: "Internal error", error: err.message });
+    console.error("❌ Error assigning role:", err.message);
+    return res.status(500).json({ message: "Internal error", error: err.message });
   }
 });
 
