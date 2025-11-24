@@ -6,6 +6,7 @@ import Login from "../pages/Login";
 import SelectCompany from "../pages/SelectCompany";
 import Dashboard from "../pages/Dashboard";
 import ProtectedRoute from "./ProtectedRoute";
+import Companies from "../pages/Companies";
 
 // Módulos
 import VentasIndex from "../pages/Ventas";
@@ -57,7 +58,7 @@ export default function AppRouter({
           }
         />
 
-        {/* SELECT COMPANY – SIEMPRE SE DEBE PASAR POR AQUÍ */}
+        {/* SELECT COMPANY */}
         <Route
           path="/select-company"
           element={
@@ -116,7 +117,10 @@ export default function AppRouter({
           <Route path="configuracion/usuarios" element={<ConfigUsuarios />} />
           <Route path="configuracion/roles" element={<ConfigRoles />} />
           <Route path="configuracion/permisos" element={<ConfigPermisos />} />
-          <Route path="configuracion/dashboard" element={<ConfigDashboard />} /> 
+          <Route path="configuracion/dashboard" element={<ConfigDashboard />} />
+
+          {/* AQUI ESTABA EL PROBLEMA */}
+          <Route path="companies" element={<Companies />} />
         </Route>
 
         {/* fallback */}
