@@ -6,29 +6,58 @@ export async function getMyDashboardConfig(req, res) {
     const userId = req.user.id;
     const empresaId = req.user.empresa_id;
 
-    const { data, error } = await supabase
+    // 1) Buscar config existente
+    let { data, error } = await supabase
       .from("dashboard_config")
       .select("*")
       .eq("empresa_id", empresaId)
       .eq("user_id", userId)
-      .single();
+      .maybeSingle();
 
-    if (error && error.code !== "PGRST116") {
+    if (error) {
       console.error("❌ Error cargando config:", error);
-      return res.status(500).json({ error: "Error cargando config" });
+      return res.status(500).json({ error: "Error cargando configuración" });
     }
 
-    return res.json({
-      config: data || {
-        widgets: [],
-        disabled_widgets: [],
-      },
-    });
+    // 2) Si no existe, crearla
+    if (!data) {
+      const init = {
+        empresa_id: empresaId,
+        user_id: userId,
+        widgets: [
+          "kpis",
+          "ventas",
+          "ingresosGastos",
+          "stock",
+          "clientes",
+          "actividad",
+        ],
+        disabled_widgets: []
+      };
+
+      const { data: inserted, error: err2 } = await supabase
+        .from("dashboard_config")
+        .insert(init)
+        .select()
+        .single();
+
+      if (err2) {
+        console.error("❌ Error insertando config:", err2);
+        return res.status(500).json({ error: "Error generando config inicial" });
+      }
+
+      data = inserted;
+    }
+
+    // 3) Responder config real
+    return res.json({ config: data });
+
   } catch (err) {
     console.error("❌ Error interno:", err);
-    return res.status(500).json({ error: "Error cargando configuración" });
+    return res.status(500).json({ error: "Error interno" });
   }
 }
+
 
 export async function saveDashboardConfig(req, res) {
   try {
@@ -39,26 +68,56 @@ export async function saveDashboardConfig(req, res) {
     console.log("🟦 SAVE CONFIG → empresaId:", empresaId, "userId:", userId);
     console.log("🟦 BODY:", req.body);
 
+    // 1) Intentar UPDATE primero
+    const { data: updated, error: updateError } = await supabase
+      .from("dashboard_config")
+      .update({
+        widgets: widgets || [],
+        disabled_widgets: disabled_widgets || [],
+        updated_at: new Date().toISOString(),
+      })
+      .eq("empresa_id", empresaId)
+      .eq("user_id", userId)
+      .select()
+      .maybeSingle();
 
-    // UPSERT = update si existe o insert si no
-    const { error } = await supabase.from("dashboard_config").upsert(
-      {
+    if (updateError) {
+      console.error("❌ Error en UPDATE:", updateError);
+    }
+
+    // Si el UPDATE funcionó → devolver OK
+    if (updated) {
+      return res.json({ mensaje: "Configuración actualizada", config: updated });
+    }
+
+    // 2) Si no existía fila, hacer INSERT
+    const { data: inserted, error: insertError } = await supabase
+      .from("dashboard_config")
+      .insert({
         empresa_id: empresaId,
         user_id: userId,
         widgets: widgets || [],
         disabled_widgets: disabled_widgets || [],
-      },
-      { onConflict: "empresa_id,user_id" }
-    );
+      })
+      .select()
+      .single();
 
-    if (error) {
-      console.error("❌ Error guardando config:", error);
-      return res.status(500).json({ error: "Error guardando configuración" });
+    if (insertError) {
+      console.error("❌ Error en INSERT:", insertError);
+      return res
+        .status(500)
+        .json({ error: "No se pudo guardar la configuración" });
     }
 
-    return res.json({ mensaje: "Configuración guardada" });
+    return res.json({
+      mensaje: "Configuración creada",
+      config: inserted,
+    });
   } catch (err) {
-    console.error("❌ Error interno:", err);
-    return res.status(500).json({ error: "Error guardando configuración" });
+    console.error("❌ Error interno en saveDashboardConfig:", err);
+    return res.status(500).json({
+      error: "Error interno guardando configuración",
+    });
   }
 }
+
