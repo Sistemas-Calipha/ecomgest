@@ -31,10 +31,10 @@ export const getCompanyById = async (id) => {
 // ======================================================
 // POST: crear company
 // ======================================================
-export const createCompany = async ({ nombre, cuit, estado }) => {
+export const createCompany = async ({ nombre, plan, estado }) => {
   const payload = {
     nombre,
-    cuit,
+    plan,
     estado: estado || "activa",
   };
 
@@ -51,10 +51,10 @@ export const createCompany = async ({ nombre, cuit, estado }) => {
 // ======================================================
 // PUT: actualizar company
 // ======================================================
-export const updateCompany = async (id, { nombre, cuit, estado }) => {
+export const updateCompany = async (id, { nombre, plan, estado }) => {
   const payload = {
     nombre,
-    cuit,
+    plan,
     estado,
     updated_at: new Date().toISOString(),
   };
