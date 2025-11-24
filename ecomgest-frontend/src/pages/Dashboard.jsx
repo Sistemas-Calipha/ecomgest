@@ -168,7 +168,6 @@ export default function Dashboard({ user }) {
 
   const [widgetsOrder, setWidgetsOrder] = useState(DEFAULT_WIDGETS);
   const [disabledWidgets, setDisabledWidgets] = useState([]);
-
   const [configModalOpen, setConfigModalOpen] = useState(false);
   const [tempDisabled, setTempDisabled] = useState([]);
 
@@ -198,9 +197,14 @@ export default function Dashboard({ user }) {
 
   // --------------------------------------
   // 2) Cargar configuración desde backend
+  //    y abrir modal si venimos de Configuración
   // --------------------------------------
   useEffect(() => {
     async function loadConfig() {
+      // Valores por defecto
+      let finalWidgetsOrder = DEFAULT_WIDGETS;
+      let finalDisabledWidgets = [];
+
       try {
         const res = await api.get("/dashboard/my");
         const cfg = res.config || res || {};
@@ -214,37 +218,35 @@ export default function Dashboard({ user }) {
           ? cfg.disabled_widgets.filter((id) => DEFAULT_WIDGETS.includes(id))
           : [];
 
-        setWidgetsOrder(savedWidgets);
-        setDisabledWidgets(savedDisabled);
+        finalWidgetsOrder = savedWidgets;
+        finalDisabledWidgets = savedDisabled;
       } catch (err) {
         console.error("❌ No se pudo cargar config dashboard", err);
-        setWidgetsOrder(DEFAULT_WIDGETS);
-        setDisabledWidgets([]);
       } finally {
+        // Seteamos SIEMPRE con algo coherente (lo que vino o defaults)
+        setWidgetsOrder(finalWidgetsOrder);
+        setDisabledWidgets(finalDisabledWidgets);
+        setTempDisabled(finalDisabledWidgets);
         setLoadingConfig(false);
+
+        // Si venimos desde la página de Configuración/Dashboard,
+        // abrimos el modal SOLO después de haber seteado estos valores.
+        if (
+          location.state?.openDashboardConfig &&
+          !openedFromConfigRef.current
+        ) {
+          openedFromConfigRef.current = true;
+          setConfigModalOpen(true);
+
+          // Limpiar el state de navegación para que no se reabra solo
+          navigate(location.pathname, { replace: true });
+        }
       }
     }
 
     loadConfig();
-  }, []);
-
-  // --------------------------------------
-  // 3) Abrir modal si venimos de Configuración (una sola vez)
-  // --------------------------------------
-  useEffect(() => {
-    if (
-      location.state?.openDashboardConfig &&
-      !openedFromConfigRef.current &&
-      !loadingConfig
-    ) {
-      openedFromConfigRef.current = true;
-      setTempDisabled(disabledWidgets);
-      setConfigModalOpen(true);
-
-      // Limpio el state de la URL para que no se reabra solo
-      navigate(location.pathname, { replace: true });
-    }
-  }, [location.state, disabledWidgets, loadingConfig, navigate, location.pathname]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Solo al montar; location/navigate son estables en esta pantalla
 
   // --------------------------------------
   // Guardar config en backend (orden + desactivados)
@@ -284,6 +286,7 @@ export default function Dashboard({ user }) {
   // Configuración de widgets (modal)
   // --------------------------------------
   function handleOpenConfig() {
+    // Siempre tomamos el estado real actual
     setTempDisabled(disabledWidgets);
     setConfigModalOpen(true);
   }
@@ -818,4 +821,3 @@ function WidgetActividad({ loading }) {
     </div>
   );
 }
-
