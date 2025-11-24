@@ -21,7 +21,7 @@ import companiesRoutes from "./routes/companies.routes.js";
 import paymentMethodsRoutes from "./routes/paymentMethods.routes.js";
 import reportsRoutes from "./routes/reports.routes.js";
 import dashboardRoutes from "./routes/dashboard.routes.js";
-
+import debugRoutes from "./routes/debug.routes.js";
 
 // -------------------------------
 // __dirname para ES Modules
@@ -81,6 +81,7 @@ app.use("/companies", companiesRoutes);
 app.use("/payment-methods", paymentMethodsRoutes);
 app.use("/reports", reportsRoutes);
 app.use("/dashboard", dashboardRoutes);
+app.use("/dashboard", debugRoutes);
 
 // ======================================================================
 //  EXPORT
