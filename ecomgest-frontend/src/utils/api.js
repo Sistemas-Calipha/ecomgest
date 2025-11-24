@@ -1,7 +1,4 @@
-const API_BASE_URL =
-  import.meta.env.VITE_API_URL ||
-  "http://localhost:3000";
-
+const API_BASE_URL = "https://ecomgest-backend.onrender.com";
 
 async function apiRequest(method, url, data) {
   const token = sessionStorage.getItem("token");
