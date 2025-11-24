@@ -36,6 +36,10 @@ export async function saveDashboardConfig(req, res) {
     const empresaId = req.user.empresa_id;
     const { widgets, disabled_widgets } = req.body;
 
+    console.log("🟦 SAVE CONFIG → empresaId:", empresaId, "userId:", userId);
+    console.log("🟦 BODY:", req.body);
+
+
     // UPSERT = update si existe o insert si no
     const { error } = await supabase.from("dashboard_config").upsert(
       {
