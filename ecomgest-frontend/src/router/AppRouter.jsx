@@ -28,7 +28,7 @@ import ClientesSegmentos from "../pages/Clientes/Segmentos";
 import FinanzasIndex from "../pages/Finanzas";
 import FinanzasCaja from "../pages/Finanzas/Caja";
 import FinanzasPagos from "../pages/Finanzas/Pagos";
-import FinanzasIngresos from "../pages/Finanzas/Ingresos";
+import FinanzasIngresos from "../pages/Finanzas/Ingresresos";
 import FinanzasCierres from "../pages/Finanzas/Cierres";
 
 import ConfiguracionIndex from "../pages/Configuracion";
@@ -73,53 +73,49 @@ export default function AppRouter({ user, pendingUser, onLogin, onCompanySelecte
             </ProtectedRoute>
           }
         >
+          {/* Inicio */}
           <Route index element={<Dashboard user={user} />} />
 
-          {/* ventas */}
+          {/* Ventas */}
           <Route path="ventas" element={<VentasIndex />} />
           <Route path="ventas/ordenes" element={<VentasOrdenes />} />
           <Route path="ventas/facturacion" element={<VentasFacturacion />} />
           <Route path="ventas/metodos-pago" element={<VentasPago />} />
 
-          {/* inventario */}
+          {/* Inventario */}
           <Route path="inventario" element={<InventarioIndex />} />
           <Route path="inventario/productos" element={<InventarioProductos />} />
           <Route path="inventario/movimientos" element={<InventarioMovimientos />} />
           <Route path="inventario/alertas" element={<InventarioAlertas />} />
           <Route path="inventario/proveedores" element={<InventarioProveedores />} />
 
-          {/* clientes */}
+          {/* Clientes */}
           <Route path="clientes" element={<ClientesIndex />} />
           <Route path="clientes/crm" element={<ClientesCRM />} />
           <Route path="clientes/historial" element={<ClientesHistorial />} />
           <Route path="clientes/segmentos" element={<ClientesSegmentos />} />
 
-          {/* finanzas */}
+          {/* Finanzas */}
           <Route path="finanzas" element={<FinanzasIndex />} />
           <Route path="finanzas/caja" element={<FinanzasCaja />} />
           <Route path="finanzas/pagos" element={<FinanzasPagos />} />
-          <Route path="finanzas/ingresos" element={<FinanzasIngresos />} />
+          <Route path="finanzas/ingresos" element={<FinanzasIngresresos />} />
           <Route path="finanzas/cierres" element={<FinanzasCierres />} />
 
-          {/* configuración */}
+          {/* Configuración */}
           <Route path="configuracion" element={<ConfiguracionIndex />} />
-          <Route
-            path="configuracion/usuarios"
-            element={
-              <ProtectedRoute>
-                <Users />
-              </ProtectedRoute>
-            }
-          />
+
+          <Route path="configuracion/usuarios" element={<ProtectedRoute user={user}><Users /></ProtectedRoute>}/>
+
           <Route path="configuracion/roles" element={<ConfigRoles />} />
           <Route path="configuracion/permisos" element={<ConfigPermisos />} />
           <Route path="configuracion/dashboard" element={<ConfigDashboard />} />
 
-          {/* Empresas (Admin Central) */}
+          {/* Empresas del Admin Central */}
           <Route path="companies" element={<Companies />} />
         </Route>
 
-        {/* fallback */}
+        {/* Fallback */}
         <Route path="*" element={<Navigate to="/login" replace />} />
 
       </Routes>
