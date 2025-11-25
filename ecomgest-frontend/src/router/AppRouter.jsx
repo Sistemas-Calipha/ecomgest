@@ -32,12 +32,18 @@ import FinanzasIngresos from "../pages/Finanzas/Ingresos";
 import FinanzasCierres from "../pages/Finanzas/Cierres";
 
 import ConfiguracionIndex from "../pages/Configuracion";
-import Users from "../pages/Configuracion/Users.jsx";
+import Users from "../pages/Configuracion/Users";    // <-- IMPORT CORRECTO
 import ConfigRoles from "../pages/Configuracion/Roles";
 import ConfigPermisos from "../pages/Configuracion/Permisos";
 import ConfigDashboard from "../pages/Configuracion/DashboardConfig";
 
-export default function AppRouter({ user, pendingUser, onLogin, onCompanySelected, onLogout }) {
+export default function AppRouter({
+  user,
+  pendingUser,
+  onLogin,
+  onCompanySelected,
+  onLogout
+}) {
   return (
     <BrowserRouter>
       <Routes>
@@ -103,19 +109,21 @@ export default function AppRouter({ user, pendingUser, onLogin, onCompanySelecte
 
           {/* configuración */}
           <Route path="configuracion" element={<ConfiguracionIndex />} />
+
           <Route
             path="configuracion/usuarios"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute user={user}>
                 <Users />
               </ProtectedRoute>
             }
           />
+
           <Route path="configuracion/roles" element={<ConfigRoles />} />
           <Route path="configuracion/permisos" element={<ConfigPermisos />} />
           <Route path="configuracion/dashboard" element={<ConfigDashboard />} />
 
-          {/* Empresas (Admin Central) */}
+          {/* Empresas */}
           <Route path="companies" element={<Companies />} />
         </Route>
 
