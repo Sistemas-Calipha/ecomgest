@@ -73,49 +73,53 @@ export default function AppRouter({ user, pendingUser, onLogin, onCompanySelecte
             </ProtectedRoute>
           }
         >
-          {/* Inicio */}
           <Route index element={<Dashboard user={user} />} />
 
-          {/* Ventas */}
+          {/* ventas */}
           <Route path="ventas" element={<VentasIndex />} />
           <Route path="ventas/ordenes" element={<VentasOrdenes />} />
           <Route path="ventas/facturacion" element={<VentasFacturacion />} />
           <Route path="ventas/metodos-pago" element={<VentasPago />} />
 
-          {/* Inventario */}
+          {/* inventario */}
           <Route path="inventario" element={<InventarioIndex />} />
           <Route path="inventario/productos" element={<InventarioProductos />} />
           <Route path="inventario/movimientos" element={<InventarioMovimientos />} />
           <Route path="inventario/alertas" element={<InventarioAlertas />} />
           <Route path="inventario/proveedores" element={<InventarioProveedores />} />
 
-          {/* Clientes */}
+          {/* clientes */}
           <Route path="clientes" element={<ClientesIndex />} />
           <Route path="clientes/crm" element={<ClientesCRM />} />
           <Route path="clientes/historial" element={<ClientesHistorial />} />
           <Route path="clientes/segmentos" element={<ClientesSegmentos />} />
 
-          {/* Finanzas */}
+          {/* finanzas */}
           <Route path="finanzas" element={<FinanzasIndex />} />
           <Route path="finanzas/caja" element={<FinanzasCaja />} />
           <Route path="finanzas/pagos" element={<FinanzasPagos />} />
-          <Route path="finanzas/ingresos" element={<FinanzasIngresresos />} />
+          <Route path="finanzas/ingresos" element={<FinanzasIngresos />} />
           <Route path="finanzas/cierres" element={<FinanzasCierres />} />
 
-          {/* Configuración */}
+          {/* configuración */}
           <Route path="configuracion" element={<ConfiguracionIndex />} />
-
-          <Route path="configuracion/usuarios" element={<ProtectedRoute user={user}><Users /></ProtectedRoute>}/>
-
+          <Route
+            path="configuracion/usuarios"
+            element={
+              <ProtectedRoute>
+                <Users />
+              </ProtectedRoute>
+            }
+          />
           <Route path="configuracion/roles" element={<ConfigRoles />} />
           <Route path="configuracion/permisos" element={<ConfigPermisos />} />
           <Route path="configuracion/dashboard" element={<ConfigDashboard />} />
 
-          {/* Empresas del Admin Central */}
+          {/* Empresas (Admin Central) */}
           <Route path="companies" element={<Companies />} />
         </Route>
 
-        {/* Fallback */}
+        {/* fallback */}
         <Route path="*" element={<Navigate to="/login" replace />} />
 
       </Routes>
