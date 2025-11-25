@@ -1,27 +1,12 @@
-// src/routes/roles.routes.js
-import Router from "express";
-import { verifyToken } from "../middlewares/auth.middleware.js";
-import { authorizePermission } from "../middlewares/permissions.middleware.js";
+export async function listRolesController(req, res) {
+  const result = await listRoles(req);
 
-import {
-  listRolesController,
-  createRoleController,
-  updateRoleController,
-  updateRoleStateController,
-} from "../controllers/roles.controller.js";
+  if (result.error) {
+    return res.status(result.status).json({ mensaje: result.error });
+  }
 
-const router = Router();
-
-// ver_roles
-router.get("/", verifyToken, authorizePermission("ver_roles"), listRolesController);
-
-// crear_rol
-router.post("/", verifyToken, authorizePermission("crear_rol"), createRoleController);
-
-// editar_rol
-router.put("/:id", verifyToken, authorizePermission("editar_rol"), updateRoleController);
-
-// activar_rol / desactivar_rol
-router.patch("/:id/state", verifyToken, authorizePermission("activar_rol"), updateRoleStateController);
-
-export default router;
+  // 🔥 NORMALIZAMOS LA RESPUESTA PARA EL FRONTEND
+  return res.status(200).json({
+    roles: result.data.roles
+  });
+}
