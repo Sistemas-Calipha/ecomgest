@@ -28,7 +28,7 @@ import ClientesSegmentos from "../pages/Clientes/Segmentos";
 import FinanzasIndex from "../pages/Finanzas";
 import FinanzasCaja from "../pages/Finanzas/Caja";
 import FinanzasPagos from "../pages/Finanzas/Pagos";
-import FinanzasIngresos from "../pages/Finanzas/Ingresresos";
+import FinanzasIngresos from "../pages/Finanzas/Ingresos";
 import FinanzasCierres from "../pages/Finanzas/Cierres";
 
 import ConfiguracionIndex from "../pages/Configuracion";
