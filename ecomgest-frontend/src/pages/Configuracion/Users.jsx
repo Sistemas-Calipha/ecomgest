@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import api from "../../utils/api";
 import Modal from "../../components/ui/Modal";
 import Skeleton from "../../components/ui/Skeleton";
-import { Plus, Pencil, Trash2, RefreshCw, Shield } from "lucide-react";
+import { Plus, Pencil, RefreshCw, Shield } from "lucide-react";
 
 export default function Users() {
   const [loading, setLoading] = useState(true);
@@ -14,7 +14,6 @@ export default function Users() {
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
-
   const [current, setCurrent] = useState(null);
 
   const [form, setForm] = useState({
@@ -25,9 +24,9 @@ export default function Users() {
     empresas: []
   });
 
-  // ========================================
+  // ======================================================
   // CARGA INICIAL
-  // ========================================
+  // ======================================================
   async function loadData() {
     try {
       setLoading(true);
@@ -53,9 +52,9 @@ export default function Users() {
     loadData();
   }, []);
 
-  // ========================================
-  // ABRIR MODAL CREAR
-  // ========================================
+  // ======================================================
+  // NUEVO USUARIO
+  // ======================================================
   function openCreate() {
     setEditMode(false);
     setCurrent(null);
@@ -69,9 +68,9 @@ export default function Users() {
     setModalOpen(true);
   }
 
-  // ========================================
-  // ABRIR MODAL EDITAR
-  // ========================================
+  // ======================================================
+  // EDITAR USUARIO
+  // ======================================================
   function openEdit(user) {
     setEditMode(true);
     setCurrent(user);
@@ -81,15 +80,15 @@ export default function Users() {
       correo: user.correo,
       rol_id: user.rol_id,
       activo: user.activo,
-      empresas: user.empresas || []
+      empresas: user.empresas || [] // todavía no viene del backend
     });
 
     setModalOpen(true);
   }
 
-  // ========================================
-  // GUARDAR: CREATE + UPDATE
-  // ========================================
+  // ======================================================
+  // GUARDAR (CREAR / ACTUALIZAR)
+  // ======================================================
   async function saveUser() {
     try {
       if (!form.nombre_completo.trim() || !form.correo.trim() || !form.rol_id) {
@@ -106,34 +105,36 @@ export default function Users() {
           empresas: form.empresas
         });
       } else {
-        await api.post(`/users`, form);
+        await api.post(`/users`, {
+          ...form,
+          empresas: form.empresas
+        });
       }
 
       setModalOpen(false);
       loadData();
+
     } catch (err) {
       console.error("❌ Error guardando usuario:", err.message);
       alert("No se pudo guardar.");
     }
   }
 
-  // ========================================
-  // ACTIVAR / DESACTIVAR
-  // ========================================
+  // ======================================================
+  // CAMBIAR ESTADO
+  // ======================================================
   async function toggleActive(user) {
     try {
-      await api.patch(`/users/${user.id}/state`, {
-        activo: !user.activo,
-      });
+      await api.patch(`/users/${user.id}/state`, { activo: !user.activo });
       loadData();
     } catch {
       alert("No se pudo actualizar el estado.");
     }
   }
 
-  // ========================================
+  // ======================================================
   // RESET PASSWORD
-  // ========================================
+  // ======================================================
   async function resetPass(user) {
     if (!confirm(`¿Resetear contraseña de ${user.nombre_completo}?`)) return;
 
@@ -145,9 +146,9 @@ export default function Users() {
     }
   }
 
-  // ========================================
-  // RENDER UI
-  // ========================================
+  // ======================================================
+  // RENDER
+  // ======================================================
   return (
     <div className="animate-fade space-y-8">
 
@@ -193,6 +194,7 @@ export default function Users() {
                   <th className="py-2 text-right">Acciones</th>
                 </tr>
               </thead>
+
               <tbody>
                 {users.length === 0 && (
                   <tr>
@@ -222,26 +224,27 @@ export default function Users() {
                         </span>
                       )}
                     </td>
+
                     <td className="py-3 text-right">
                       <div className="flex justify-end gap-2">
 
                         <button
                           onClick={() => openEdit(u)}
-                          className="p-1.5 rounded-lg hover:bg-slate-200/60 dark:hover:bg-slate-700/60 transition"
+                          className="p-1.5 rounded-lg hover:bg-slate-200/60 dark:hover:bg-slate-700/60"
                         >
                           <Pencil size={16} />
                         </button>
 
                         <button
                           onClick={() => toggleActive(u)}
-                          className="p-1.5 rounded-lg hover:bg-slate-200/60 dark:hover:bg-slate-700/60 transition"
+                          className="p-1.5 rounded-lg hover:bg-slate-200/60 dark:hover:bg-slate-700/60"
                         >
                           <Shield size={16} />
                         </button>
 
                         <button
                           onClick={() => resetPass(u)}
-                          className="p-1.5 rounded-lg hover:bg-purple-200/60 dark:hover:bg-purple-900/40 transition"
+                          className="p-1.5 rounded-lg hover:bg-purple-200/60 dark:hover:bg-purple-900/40"
                         >
                           <RefreshCw size={16} />
                         </button>
@@ -250,21 +253,17 @@ export default function Users() {
                     </td>
                   </tr>
                 ))}
-
               </tbody>
+
             </table>
           </div>
         )}
       </section>
 
       {/* MODAL */}
-      <Modal
-        isOpen={modalOpen}
-        onClose={() => setModalOpen(false)}
-        title={editMode ? "Editar usuario" : "Nuevo usuario"}
-        size="md"
-      >
+      <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)} title={editMode ? "Editar usuario" : "Nuevo usuario"} size="md">
         <div className="space-y-4">
+
           {/* Nombre */}
           <div>
             <label className="text-xs text-slate-500">Nombre completo</label>
@@ -297,14 +296,12 @@ export default function Users() {
             >
               <option value="">Seleccionar...</option>
               {roles.map((r) => (
-                <option key={r.id} value={r.id}>
-                  {r.nombre}
-                </option>
+                <option key={r.id} value={r.id}>{r.nombre}</option>
               ))}
             </select>
           </div>
 
-          {/* Empresas asignadas */}
+          {/* Empresas */}
           <div>
             <label className="text-xs text-slate-500">Empresas</label>
             <select
@@ -313,15 +310,13 @@ export default function Users() {
               onChange={(e) =>
                 setForm({
                   ...form,
-                  empresas: Array.from(e.target.selectedOptions).map((o) => o.value),
+                  empresas: Array.from(e.target.selectedOptions).map((o) => o.value)
                 })
               }
               className="w-full mt-1 px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900"
             >
               {companies.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.nombre}
-                </option>
+                <option key={c.id} value={c.id}>{c.nombre}</option>
               ))}
             </select>
           </div>
@@ -336,6 +331,7 @@ export default function Users() {
             <span className="text-sm">Activo</span>
           </div>
 
+          {/* BOTONES */}
           <div className="flex justify-end gap-2 pt-3">
             <button
               onClick={() => setModalOpen(false)}
@@ -351,6 +347,7 @@ export default function Users() {
               {editMode ? "Guardar cambios" : "Crear usuario"}
             </button>
           </div>
+
         </div>
       </Modal>
     </div>
