@@ -1,4 +1,5 @@
 // src/controllers/companies.controller.js
+
 import {
   getCompaniesService,
   createCompanyService,
@@ -7,11 +8,14 @@ import {
 } from "../services/companies.service.js";
 
 // =====================================
-// GET /companies
+// GET /companies  (solo empresas del usuario actual)
 // =====================================
 export async function getCompanies(req, res) {
   try {
-    const empresas = await getCompaniesService();
+    const empresa_id = req.user.empresa_id; // viene del JWT
+
+    const empresas = await getCompaniesService(empresa_id);
+
     return res.json({ companies: empresas });
   } catch (err) {
     console.error("❌ Error obteniendo empresas:", err.message);

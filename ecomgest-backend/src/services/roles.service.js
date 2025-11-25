@@ -36,7 +36,6 @@ export async function createRole(req) {
   const cleanName = nombre.toLowerCase();
 
   try {
-    // Verificar si existe
     const { data: existing } = await supabase
       .from("roles")
       .select("id")
@@ -47,7 +46,6 @@ export async function createRole(req) {
       return { status: 409, error: "Ya existe un rol con ese nombre." };
     }
 
-    // Insertar
     const { data, error } = await supabase
       .from("roles")
       .insert([{ nombre: cleanName, descripcion }])
@@ -127,7 +125,6 @@ export async function updateRoleState(req) {
   }
 
   try {
-    // Si se desactiva, verificar que no tenga usuarios
     if (!activo) {
       const { data: assigned } = await supabase
         .from("usuarios")
@@ -142,7 +139,6 @@ export async function updateRoleState(req) {
       }
     }
 
-    // Actualizar
     const { data, error } = await supabase
       .from("roles")
       .update({ activo })

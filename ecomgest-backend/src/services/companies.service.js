@@ -2,12 +2,13 @@
 import supabase from "../config/supabase.js";
 
 // ======================================================
-// GET ALL COMPANIES
+// GET ALL COMPANIES DEL USUARIO ACTUAL
 // ======================================================
-export const getCompaniesService = async () => {
+export const getCompaniesService = async (empresa_id) => {
   const { data, error } = await supabase
     .from("empresas")
     .select("*")
+    .eq("id", empresa_id) // ← SOLO la empresa del usuario logueado
     .order("creado_en", { ascending: true });
 
   if (error) throw new Error(error.message);
