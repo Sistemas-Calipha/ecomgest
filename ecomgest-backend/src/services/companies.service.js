@@ -1,9 +1,9 @@
 // src/services/companies.service.js
 import supabase from "../config/supabase.js";
 
-// ===========================================
-// BASE SERVICES (nombres simples)
-// ===========================================
+// ======================================================
+// GET ALL COMPANIES
+// ======================================================
 export const getCompanies = async () => {
   const { data, error } = await supabase
     .from("empresas")
@@ -14,6 +14,9 @@ export const getCompanies = async () => {
   return data;
 };
 
+// ======================================================
+// GET BY ID
+// ======================================================
 export const getCompanyById = async (id) => {
   const { data, error } = await supabase
     .from("empresas")
@@ -25,13 +28,16 @@ export const getCompanyById = async (id) => {
   return data;
 };
 
+// ======================================================
+// CREATE COMPANY  (YA INCLUYE CUIT)
+// ======================================================
 export const createCompany = async ({ nombre, cuit, plan, estado }) => {
   const { data, error } = await supabase
     .from("empresas")
     .insert([
       {
         nombre,
-        cuit, // 👈 YA SE ENVÍA EL CUIT
+        cuit,
         plan,
         estado,
       },
@@ -43,12 +49,15 @@ export const createCompany = async ({ nombre, cuit, plan, estado }) => {
   return data;
 };
 
+// ======================================================
+// UPDATE COMPANY  (YA INCLUYE CUIT)
+// ======================================================
 export const updateCompany = async (id, { nombre, cuit, plan, estado }) => {
   const { data, error } = await supabase
     .from("empresas")
     .update({
       nombre,
-      cuit, // 👈 YA SE ACTUALIZA EL CUIT
+      cuit,
       plan,
       estado,
     })
@@ -60,6 +69,9 @@ export const updateCompany = async (id, { nombre, cuit, plan, estado }) => {
   return data;
 };
 
+// ======================================================
+// DELETE COMPANY
+// ======================================================
 export const deleteCompany = async (id) => {
   const { error } = await supabase
     .from("empresas")
@@ -69,13 +81,3 @@ export const deleteCompany = async (id) => {
   if (error) throw new Error(error.message);
   return true;
 };
-
-// ===========================================
-// ALIASES COMPATIBLES CON EL CONTROLLER
-// (para que companies.controller.js no reviente)
-// ===========================================
-export const getCompaniesService = getCompanies;
-export const getCompanyByIdService = getCompanyById;
-export const createCompanyService = createCompany;
-export const updateCompanyService = updateCompany;
-export const deleteCompanyService = deleteCompany;
