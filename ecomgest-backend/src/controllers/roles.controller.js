@@ -1,30 +1,27 @@
+// src/routes/roles.routes.js
+import Router from "express";
+import { verifyToken } from "../middlewares/auth.middleware.js";
+import { authorizePermission } from "../middlewares/permissions.middleware.js";
+
 import {
-  listRoles,
-  createRole,
-  updateRole,
-  updateRoleState,
-} from "../services/roles.service.js";
+  listRolesController,
+  createRoleController,
+  updateRoleController,
+  updateRoleStateController,
+} from "../controllers/roles.controller.js";
 
-export async function listRolesController(req, res) {
-  const result = await listRoles(req);
-  if (result.error) return res.status(result.status).json({ mensaje: result.error });
-  return res.status(result.status).json(result.data);
-}
+const router = Router();
 
-export async function createRoleController(req, res) {
-  const result = await createRole(req);
-  if (result.error) return res.status(result.status).json({ mensaje: result.error });
-  return res.status(result.status).json(result.data);
-}
+// ver_roles
+router.get("/", verifyToken, authorizePermission("ver_roles"), listRolesController);
 
-export async function updateRoleController(req, res) {
-  const result = await updateRole(req);
-  if (result.error) return res.status(result.status).json({ mensaje: result.error });
-  return res.status(result.status).json(result.data);
-}
+// crear_rol
+router.post("/", verifyToken, authorizePermission("crear_rol"), createRoleController);
 
-export async function updateRoleStateController(req, res) {
-  const result = await updateRoleState(req);
-  if (result.error) return res.status(result.status).json({ mensaje: result.error });
-  return res.status(result.status).json(result.data);
-}
+// editar_rol
+router.put("/:id", verifyToken, authorizePermission("editar_rol"), updateRoleController);
+
+// activar_rol / desactivar_rol
+router.patch("/:id/state", verifyToken, authorizePermission("activar_rol"), updateRoleStateController);
+
+export default router;

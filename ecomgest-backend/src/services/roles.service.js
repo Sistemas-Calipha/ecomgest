@@ -1,40 +1,59 @@
+// src/services/roles.service.js
 import supabase from "../config/supabase.js";
 import { registerAudit } from "./audit.service.js";
 import { getRequestMeta } from "../middlewares/audit.middleware.js";
 
 /**
- * Listar roles
+ * LISTAR ROLES
  */
 export async function listRoles(req) {
+  const { ip, userAgent } = getRequestMeta(req);
+
   try {
     const { data, error } = await supabase
       .from("roles")
-      .select("*")
+      .select("id, nombre, descripcion, activo")
       .order("id", { ascending: true });
 
     if (error) {
+      await registerAudit({
+        userId: req.user.id,
+        action: "ROLES_LIST_ERROR",
+        details: { error: error.message },
+        ip, userAgent
+      });
       return { status: 500, error: "Error obteniendo roles." };
     }
 
+    await registerAudit({
+      userId: req.user.id,
+      action: "ROLES_LIST_OK",
+      details: { count: data.length },
+      ip, userAgent
+    });
+
     return { status: 200, data: { roles: data } };
+
   } catch (err) {
     return { status: 500, error: "Error interno del servidor." };
   }
 }
 
 /**
- * Crear rol
+ * CREAR ROL
  */
 export async function createRole(req) {
   const { nombre, descripcion } = req.body;
+  const { ip, userAgent } = getRequestMeta(req);
 
   if (!nombre) {
     return { status: 400, error: "El nombre del rol es obligatorio." };
   }
 
-  const lower = nombre.toLowerCase();
-
   try {
+    const lower = nombre.toLowerCase();
+
+    // evitar duplicados
     const { data: exists } = await supabase
       .from("roles")
       .select("id")
@@ -47,10 +66,17 @@ export async function createRole(req) {
 
     const { data, error } = await supabase
       .from("roles")
-      .insert([{ nombre: lower, descripcion }])
+      .insert([{ nombre: lower, descripcion, activo: true }])
       .select();
 
     if (error) return { status: 500, error: "Error interno del servidor." };
+
+    await registerAudit({
+      userId: req.user.id,
+      action: "ROLE_CREATED",
+      details: { role_id: data[0].id, nombre: data[0].nombre },
+      ip, userAgent
+    });
 
     return {
       status: 201,
@@ -59,17 +85,19 @@ export async function createRole(req) {
         role: data[0],
       },
     };
+
   } catch (err) {
     return { status: 500, error: "Error interno del servidor." };
   }
 }
 
 /**
- * Actualizar rol
+ * ACTUALIZAR ROL
  */
 export async function updateRole(req) {
   const { id } = req.params;
   const { nombre, descripcion } = req.body;
+  const { ip, userAgent } = getRequestMeta(req);
 
   const updates = {};
   if (nombre !== undefined) updates.nombre = nombre.toLowerCase();
@@ -89,6 +117,13 @@ export async function updateRole(req) {
 
     if (error) return { status: 500, error: "Error interno del servidor." };
 
+    await registerAudit({
+      userId: req.user.id,
+      action: "ROLE_UPDATED",
+      details: { id, updates },
+      ip, userAgent
+    });
+
     return {
       status: 200,
       data: {
@@ -96,25 +131,27 @@ export async function updateRole(req) {
         role: data,
       },
     };
+
   } catch (err) {
     return { status: 500, error: "Error interno del servidor." };
   }
 }
 
 /**
- * Activar / desactivar rol
+ * ACTIVAR / DESACTIVAR ROL
  */
 export async function updateRoleState(req) {
   const { id } = req.params;
   const { activo } = req.body;
+  const { ip, userAgent } = getRequestMeta(req);
 
   if (activo === undefined) {
     return { status: 400, error: "Debe indicar el valor de 'activo'." };
   }
 
   try {
-    // Verificar si tiene usuarios asignados y evitar desactivación
-    if (activo === false) {
+    // Evitar desactivar roles con usuarios asignados
+    if (!activo) {
       const { data: assigned } = await supabase
         .from("usuarios")
         .select("id")
@@ -137,6 +174,13 @@ export async function updateRoleState(req) {
 
     if (error) return { status: 500, error: "Error interno del servidor." };
 
+    await registerAudit({
+      userId: req.user.id,
+      action: "ROLE_STATE_CHANGED",
+      details: { id, activo },
+      ip, userAgent
+    });
+
     return {
       status: 200,
       data: {
@@ -144,6 +188,7 @@ export async function updateRoleState(req) {
         role: data,
       },
     };
+
   } catch (err) {
     return { status: 500, error: "Error interno del servidor." };
   }
