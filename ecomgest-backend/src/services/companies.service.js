@@ -4,7 +4,7 @@ import supabase from "../config/supabase.js";
 // ======================================================
 // GET ALL COMPANIES
 // ======================================================
-export const getCompanies = async () => {
+export const getCompaniesService = async () => {
   const { data, error } = await supabase
     .from("empresas")
     .select("*")
@@ -15,9 +15,9 @@ export const getCompanies = async () => {
 };
 
 // ======================================================
-// GET BY ID
+// GET COMPANY BY ID
 // ======================================================
-export const getCompanyById = async (id) => {
+export const getCompanyByIdService = async (id) => {
   const { data, error } = await supabase
     .from("empresas")
     .select("*")
@@ -29,9 +29,9 @@ export const getCompanyById = async (id) => {
 };
 
 // ======================================================
-// CREATE COMPANY  (YA INCLUYE CUIT)
+// CREATE COMPANY
 // ======================================================
-export const createCompany = async ({ nombre, cuit, plan, estado }) => {
+export const createCompanyService = async ({ nombre, cuit, plan, estado }) => {
   const { data, error } = await supabase
     .from("empresas")
     .insert([
@@ -50,9 +50,12 @@ export const createCompany = async ({ nombre, cuit, plan, estado }) => {
 };
 
 // ======================================================
-// UPDATE COMPANY  (YA INCLUYE CUIT)
+// UPDATE COMPANY
 // ======================================================
-export const updateCompany = async (id, { nombre, cuit, plan, estado }) => {
+export const updateCompanyService = async (
+  id,
+  { nombre, cuit, plan, estado }
+) => {
   const { data, error } = await supabase
     .from("empresas")
     .update({
@@ -72,11 +75,8 @@ export const updateCompany = async (id, { nombre, cuit, plan, estado }) => {
 // ======================================================
 // DELETE COMPANY
 // ======================================================
-export const deleteCompany = async (id) => {
-  const { error } = await supabase
-    .from("empresas")
-    .delete()
-    .eq("id", id);
+export const deleteCompanyService = async (id) => {
+  const { error } = await supabase.from("empresas").delete().eq("id", id);
 
   if (error) throw new Error(error.message);
   return true;

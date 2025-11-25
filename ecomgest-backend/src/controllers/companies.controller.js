@@ -24,13 +24,18 @@ export async function getCompanies(req, res) {
 // =====================================
 export async function createCompany(req, res) {
   try {
-    const { nombre, plan, estado } = req.body;
+    const { nombre, cuit, plan, estado } = req.body;
 
     if (!nombre) {
       return res.status(400).json({ error: "El nombre es obligatorio" });
     }
 
-    const nueva = await createCompanyService({ nombre, plan, estado });
+    const nueva = await createCompanyService({
+      nombre,
+      cuit,
+      plan,
+      estado,
+    });
 
     return res.json({
       mensaje: "Empresa creada",
@@ -48,10 +53,11 @@ export async function createCompany(req, res) {
 export async function updateCompany(req, res) {
   try {
     const { id } = req.params;
-    const { nombre, plan, estado } = req.body;
+    const { nombre, cuit, plan, estado } = req.body;
 
     const actualizada = await updateCompanyService(id, {
       nombre,
+      cuit,
       plan,
       estado,
     });
