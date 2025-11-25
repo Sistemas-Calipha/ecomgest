@@ -32,18 +32,12 @@ import FinanzasIngresos from "../pages/Finanzas/Ingresos";
 import FinanzasCierres from "../pages/Finanzas/Cierres";
 
 import ConfiguracionIndex from "../pages/Configuracion";
-import ConfigUsuarios from "../pages/Configuracion/Usuarios";
+import Users from "../pages/Configuracion/Users.jsx";
 import ConfigRoles from "../pages/Configuracion/Roles";
 import ConfigPermisos from "../pages/Configuracion/Permisos";
 import ConfigDashboard from "../pages/Configuracion/DashboardConfig";
 
-export default function AppRouter({
-  user,
-  pendingUser,
-  onLogin,
-  onCompanySelected,
-  onLogout
-}) {
+export default function AppRouter({ user, pendingUser, onLogin, onCompanySelected, onLogout }) {
   return (
     <BrowserRouter>
       <Routes>
@@ -63,12 +57,7 @@ export default function AppRouter({
           path="/select-company"
           element={
             pendingUser
-              ? (
-                <SelectCompany
-                  user={pendingUser}
-                  onCompanySelected={onCompanySelected}
-                />
-              )
+              ? <SelectCompany user={pendingUser} onCompanySelected={onCompanySelected} />
               : user
               ? <Navigate to="/" replace />
               : <Navigate to="/login" replace />
@@ -114,12 +103,19 @@ export default function AppRouter({
 
           {/* configuración */}
           <Route path="configuracion" element={<ConfiguracionIndex />} />
-          <Route path="configuracion/usuarios" element={<ConfigUsuarios />} />
+          <Route
+            path="configuracion/usuarios"
+            element={
+              <ProtectedRoute>
+                <Users />
+              </ProtectedRoute>
+            }
+          />
           <Route path="configuracion/roles" element={<ConfigRoles />} />
           <Route path="configuracion/permisos" element={<ConfigPermisos />} />
           <Route path="configuracion/dashboard" element={<ConfigDashboard />} />
 
-          {/* AQUI ESTABA EL PROBLEMA */}
+          {/* Empresas (Admin Central) */}
           <Route path="companies" element={<Companies />} />
         </Route>
 
