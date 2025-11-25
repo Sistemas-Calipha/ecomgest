@@ -1,335 +1,261 @@
 // src/pages/Configuracion/Users.jsx
-
 import { useEffect, useState } from "react";
 import api from "../../utils/api";
 import Modal from "../../components/ui/Modal";
 import Skeleton from "../../components/ui/Skeleton";
-import { Plus, Pencil, Trash2, RefreshCw } from "lucide-react";
+import { Plus, Pencil, Trash2, RefreshCw, Shield } from "lucide-react";
 
 export default function Users() {
-
   const [loading, setLoading] = useState(true);
   const [users, setUsers] = useState([]);
 
-  // Data from backend
   const [roles, setRoles] = useState([]);
   const [companies, setCompanies] = useState([]);
 
-  // Modal state
   const [modalOpen, setModalOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
 
-  const [currentUser, setCurrentUser] = useState(null);
+  const [current, setCurrent] = useState(null);
 
-  // Form
   const [form, setForm] = useState({
     nombre_completo: "",
     correo: "",
-    contrasena: "",
     rol_id: "",
     activo: true,
-    empresas_asignadas: [], // array de IDs de empresa
+    empresas: []
   });
 
-  const [search, setSearch] = useState("");
-
-
-  // ======================================================
-  // LOAD INIT DATA
-  // ======================================================
-
-  async function loadAll() {
+  // ========================================
+  // CARGA INICIAL
+  // ========================================
+  async function loadData() {
     try {
       setLoading(true);
 
-      const [uRes, rRes, cRes] = await Promise.all([
+      const [usersRes, rolesRes, companiesRes] = await Promise.all([
         api.get("/users"),
         api.get("/roles"),
-        api.get("/companies"),
+        api.get("/companies")
       ]);
 
-      setUsers(uRes.users || []);
-      setRoles(rRes.roles || []);
-      setCompanies(cRes.companies || []);
+      setUsers(usersRes.users || []);
+      setRoles(rolesRes.roles || []);
+      setCompanies(companiesRes.companies || []);
 
     } catch (err) {
-      console.error("❌ Error cargando datos:", err.message);
+      console.error("❌ Error cargando usuarios:", err.message);
     } finally {
       setLoading(false);
     }
   }
 
   useEffect(() => {
-    loadAll();
+    loadData();
   }, []);
 
-
-  // ======================================================
-  // OPEN MODALS
-  // ======================================================
-
-  function openCreateModal() {
+  // ========================================
+  // ABRIR MODAL CREAR
+  // ========================================
+  function openCreate() {
     setEditMode(false);
-    setCurrentUser(null);
+    setCurrent(null);
     setForm({
       nombre_completo: "",
       correo: "",
-      contrasena: "",
       rol_id: "",
       activo: true,
-      empresas_asignadas: [],
+      empresas: []
     });
     setModalOpen(true);
   }
 
-  function openEditModal(user) {
+  // ========================================
+  // ABRIR MODAL EDITAR
+  // ========================================
+  function openEdit(user) {
     setEditMode(true);
-    setCurrentUser(user);
+    setCurrent(user);
 
-    // Consultar sus empresas asignadas
-    api.get(`/company-users/${user.id}`).then((res) => {
-      const empresas = res.empresas_asignadas || [];
-
-      setForm({
-        nombre_completo: user.nombre_completo,
-        correo: user.correo,
-        contrasena: "",
-        rol_id: user.rol_id,
-        activo: user.activo,
-        empresas_asignadas: empresas.map((e) => e.empresa_id),
-      });
-
-      setModalOpen(true);
+    setForm({
+      nombre_completo: user.nombre_completo,
+      correo: user.correo,
+      rol_id: user.rol_id,
+      activo: user.activo,
+      empresas: user.empresas || []
     });
+
+    setModalOpen(true);
   }
 
-
-  // ======================================================
-  // SAVE USER (CREATE / UPDATE)
-  // ======================================================
-
+  // ========================================
+  // GUARDAR: CREATE + UPDATE
+  // ========================================
   async function saveUser() {
     try {
-      if (!form.nombre_completo.trim()) {
-        alert("El nombre es obligatorio.");
+      if (!form.nombre_completo.trim() || !form.correo.trim() || !form.rol_id) {
+        alert("Nombre, correo y rol son obligatorios.");
         return;
       }
 
-      if (!form.correo.trim()) {
-        alert("El correo es obligatorio.");
-        return;
-      }
-
-      if (!form.rol_id.trim()) {
-        alert("Debe seleccionar un rol.");
-        return;
-      }
-
-      if (form.empresas_asignadas.length === 0) {
-        alert("Debe asignar al menos una empresa.");
-        return;
-      }
-
-      let userData;
-
-      // --------------------------------
-      // CREATE
-      // --------------------------------
-      if (!editMode) {
-        userData = await api.post("/users", {
-          nombre_completo: form.nombre_completo,
-          correo: form.correo,
-          contrasena: form.contrasena || undefined,
-          rol_id: form.rol_id,
-          activo: form.activo,
-        });
-
-        const newUserId = userData.user.id;
-
-        // Asignar empresas
-        await api.post(`/company-users/assign-bulk`, {
-          userId: newUserId,
-          empresas: form.empresas_asignadas,
-        });
-      }
-
-      // --------------------------------
-      // UPDATE
-      // --------------------------------
-      else {
-        await api.put(`/users/${currentUser.id}`, {
+      if (editMode) {
+        await api.put(`/users/${current.id}`, {
           nombre_completo: form.nombre_completo,
           correo: form.correo,
           rol_id: form.rol_id,
           activo: form.activo,
+          empresas: form.empresas
         });
-
-        // Reemplazar asignaciones
-        await api.post(`/company-users/assign-bulk`, {
-          userId: currentUser.id,
-          empresas: form.empresas_asignadas,
-        });
+      } else {
+        await api.post(`/users`, form);
       }
 
       setModalOpen(false);
-      await loadAll();
-
+      loadData();
     } catch (err) {
       console.error("❌ Error guardando usuario:", err.message);
-      alert("No se pudo guardar el usuario.");
+      alert("No se pudo guardar.");
     }
   }
 
-
-  // ======================================================
-  // DELETE USER
-  // ======================================================
-
-  async function deactivateUser(user) {
-    const ok = confirm(`¿Seguro que deseas desactivar a "${user.nombre_completo}"?`);
-    if (!ok) return;
-
+  // ========================================
+  // ACTIVAR / DESACTIVAR
+  // ========================================
+  async function toggleActive(user) {
     try {
-      await api.patch(`/users/${user.id}/state`, { activo: false });
-      await loadAll();
-    } catch (err) {
-      console.error("❌ Error desactivando:", err.message);
+      await api.patch(`/users/${user.id}/state`, {
+        activo: !user.activo,
+      });
+      loadData();
+    } catch {
+      alert("No se pudo actualizar el estado.");
     }
   }
 
-
-  // ======================================================
+  // ========================================
   // RESET PASSWORD
-  // ======================================================
-
-  async function resetPassword(user) {
-    const ok = confirm(`¿Resetear contraseña del usuario "${user.nombre_completo}"?`);
-    if (!ok) return;
+  // ========================================
+  async function resetPass(user) {
+    if (!confirm(`¿Resetear contraseña de ${user.nombre_completo}?`)) return;
 
     try {
       const res = await api.post(`/users/${user.id}/reset-password`);
       alert(`Nueva contraseña: ${res.new_password}`);
-    } catch (err) {
-      console.error("❌ Error reseteando:", err.message);
+    } catch {
+      alert("No se pudo resetear la contraseña.");
     }
   }
 
-
-  // ======================================================
-  // FILTER USERS
-  // ======================================================
-
-  const filteredUsers = users.filter((u) => {
-    const q = search.toLowerCase();
-    return (
-      u.nombre_completo.toLowerCase().includes(q) ||
-      u.correo.toLowerCase().includes(q)
-    );
-  });
-
-
-  // ======================================================
-  // UI
-  // ======================================================
-
+  // ========================================
+  // RENDER UI
+  // ========================================
   return (
     <div className="animate-fade space-y-8">
 
       {/* HEADER */}
-      <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-2">
+      <header className="flex items-center justify-between">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-500">
+          <p className="text-xs uppercase text-slate-500 font-semibold tracking-wide">
             Configuración
           </p>
-
-          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
             Usuarios
           </h1>
-
-          <p className="text-sm text-slate-600 mt-1">
-            Gestiona usuarios y sus roles dentro del sistema.
+          <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
+            Administra los usuarios y accesos del sistema central.
           </p>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
-          <input
-            type="text"
-            placeholder="Buscar por nombre o correo..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="px-3 py-2 rounded-xl border border-slate-300 text-sm"
-          />
-
-          <button
-            onClick={openCreateModal}
-            className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-sm"
-          >
-            <Plus size={16} /> Nuevo usuario
-          </button>
-        </div>
+        <button
+          onClick={openCreate}
+          className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm rounded-xl shadow"
+        >
+          <Plus size={16} /> Nuevo usuario
+        </button>
       </header>
 
-
-      {/* TABLE */}
-      <section className="rounded-2xl border border-slate-200 bg-white/80 shadow-sm p-6">
+      {/* TABLA */}
+      <section className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white/70 dark:bg-slate-900/60 backdrop-blur p-6">
         {loading ? (
-          <Skeleton className="h-10 w-full" />
+          <div className="space-y-3">
+            {[...Array(4)].map((_, i) => (
+              <Skeleton key={i} className="w-full h-10" />
+            ))}
+          </div>
         ) : (
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left border-b">
-                <th className="py-2">Nombre</th>
-                <th className="py-2">Correo</th>
-                <th className="py-2">Rol</th>
-                <th className="py-2">Estado</th>
-                <th className="py-2 text-right">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredUsers.map((u) => (
-                <tr key={u.id} className="border-b">
-                  <td className="py-3">{u.nombre_completo}</td>
-                  <td>{u.correo}</td>
-                  <td>{roles.find(r => r.id === u.rol_id)?.nombre || "—"}</td>
-                  <td>
-                    {u.activo ? (
-                      <span className="text-green-600">Activo</span>
-                    ) : (
-                      <span className="text-red-600">Inactivo</span>
-                    )}
-                  </td>
-
-                  <td className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <button
-                        onClick={() => openEditModal(u)}
-                        className="p-1.5 hover:bg-slate-200 rounded-lg"
-                      >
-                        <Pencil size={16} />
-                      </button>
-
-                      <button
-                        onClick={() => resetPassword(u)}
-                        className="p-1.5 hover:bg-slate-200 rounded-lg"
-                      >
-                        <RefreshCw size={16} />
-                      </button>
-
-                      <button
-                        onClick={() => deactivateUser(u)}
-                        className="p-1.5 hover:bg-red-100 rounded-lg"
-                      >
-                        <Trash2 size={16} className="text-red-500" />
-                      </button>
-                    </div>
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-slate-200 dark:border-slate-700 text-left">
+                  <th className="py-2 pr-4">Nombre</th>
+                  <th className="py-2 pr-4">Correo</th>
+                  <th className="py-2 pr-4">Rol</th>
+                  <th className="py-2 pr-4">Estado</th>
+                  <th className="py-2 text-right">Acciones</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {users.length === 0 && (
+                  <tr>
+                    <td colSpan="5" className="py-6 text-center text-slate-500">
+                      No hay usuarios registrados.
+                    </td>
+                  </tr>
+                )}
+
+                {users.map((u) => (
+                  <tr key={u.id} className="border-b border-slate-100 dark:border-slate-800">
+                    <td className="py-3 pr-4">{u.nombre_completo}</td>
+                    <td className="py-3 pr-4">{u.correo}</td>
+                    <td className="py-3 pr-4">
+                      <span className="text-xs bg-slate-800/20 dark:bg-slate-700 px-2 py-1 rounded">
+                        {u.rol_id}
+                      </span>
+                    </td>
+                    <td className="py-3 pr-4">
+                      {u.activo ? (
+                        <span className="px-2 py-0.5 rounded-full text-xs bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
+                          Activo
+                        </span>
+                      ) : (
+                        <span className="px-2 py-0.5 rounded-full text-xs bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-300">
+                          Inactivo
+                        </span>
+                      )}
+                    </td>
+                    <td className="py-3 text-right">
+                      <div className="flex justify-end gap-2">
+
+                        <button
+                          onClick={() => openEdit(u)}
+                          className="p-1.5 rounded-lg hover:bg-slate-200/60 dark:hover:bg-slate-700/60 transition"
+                        >
+                          <Pencil size={16} />
+                        </button>
+
+                        <button
+                          onClick={() => toggleActive(u)}
+                          className="p-1.5 rounded-lg hover:bg-slate-200/60 dark:hover:bg-slate-700/60 transition"
+                        >
+                          <Shield size={16} />
+                        </button>
+
+                        <button
+                          onClick={() => resetPass(u)}
+                          className="p-1.5 rounded-lg hover:bg-purple-200/60 dark:hover:bg-purple-900/40 transition"
+                        >
+                          <RefreshCw size={16} />
+                        </button>
+
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+
+              </tbody>
+            </table>
+          </div>
         )}
       </section>
-
 
       {/* MODAL */}
       <Modal
@@ -337,68 +263,37 @@ export default function Users() {
         onClose={() => setModalOpen(false)}
         title={editMode ? "Editar usuario" : "Nuevo usuario"}
         size="md"
-        footer={
-          <>
-            <button
-              onClick={() => setModalOpen(false)}
-              className="px-3 py-1.5 rounded-lg border"
-            >
-              Cancelar
-            </button>
-            <button
-              onClick={saveUser}
-              className="px-3 py-1.5 rounded-lg bg-purple-600 text-white"
-            >
-              {editMode ? "Guardar cambios" : "Crear usuario"}
-            </button>
-          </>
-        }
       >
         <div className="space-y-4">
-
-          {/* NOMBRE */}
+          {/* Nombre */}
           <div>
             <label className="text-xs text-slate-500">Nombre completo</label>
             <input
               type="text"
               value={form.nombre_completo}
               onChange={(e) => setForm({ ...form, nombre_completo: e.target.value })}
-              className="w-full mt-1 px-3 py-2 border rounded-xl"
+              className="w-full mt-1 px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900"
             />
           </div>
 
-          {/* CORREO */}
+          {/* Correo */}
           <div>
             <label className="text-xs text-slate-500">Correo</label>
             <input
               type="email"
               value={form.correo}
               onChange={(e) => setForm({ ...form, correo: e.target.value })}
-              className="w-full mt-1 px-3 py-2 border rounded-xl"
+              className="w-full mt-1 px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900"
             />
           </div>
 
-          {/* CONTRASEÑA (solo crear) */}
-          {!editMode && (
-            <div>
-              <label className="text-xs text-slate-500">Contraseña</label>
-              <input
-                type="password"
-                value={form.contrasena}
-                onChange={(e) => setForm({ ...form, contrasena: e.target.value })}
-                placeholder="Opcional"
-                className="w-full mt-1 px-3 py-2 border rounded-xl"
-              />
-            </div>
-          )}
-
-          {/* ROL */}
+          {/* Rol */}
           <div>
             <label className="text-xs text-slate-500">Rol</label>
             <select
               value={form.rol_id}
               onChange={(e) => setForm({ ...form, rol_id: e.target.value })}
-              className="w-full mt-1 px-3 py-2 border rounded-xl"
+              className="w-full mt-1 px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900"
             >
               <option value="">Seleccionar...</option>
               {roles.map((r) => (
@@ -409,48 +304,53 @@ export default function Users() {
             </select>
           </div>
 
-          {/* EMPRESAS ASIGNADAS */}
+          {/* Empresas asignadas */}
           <div>
-            <label className="text-xs text-slate-500">
-              Empresas asignadas
-            </label>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1">
-              {companies.map((c) => (
-                <label key={c.id} className="flex items-center gap-2 text-sm">
-                  <input
-                    type="checkbox"
-                    checked={form.empresas_asignadas.includes(c.id)}
-                    onChange={(e) => {
-                      let arr = [...form.empresas_asignadas];
-
-                      if (e.target.checked) arr.push(c.id);
-                      else arr = arr.filter((x) => x !== c.id);
-
-                      setForm({ ...form, empresas_asignadas: arr });
-                    }}
-                  />
-                  {c.nombre}
-                </label>
-              ))}
-            </div>
-          </div>
-
-          {/* ESTADO */}
-          <div>
-            <label className="text-xs text-slate-500">Estado</label>
+            <label className="text-xs text-slate-500">Empresas</label>
             <select
-              value={form.activo ? 1 : 0}
+              multiple
+              value={form.empresas}
               onChange={(e) =>
-                setForm({ ...form, activo: e.target.value === "1" })
+                setForm({
+                  ...form,
+                  empresas: Array.from(e.target.selectedOptions).map((o) => o.value),
+                })
               }
-              className="w-full mt-1 px-3 py-2 border rounded-xl"
+              className="w-full mt-1 px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900"
             >
-              <option value="1">Activo</option>
-              <option value="0">Inactivo</option>
+              {companies.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.nombre}
+                </option>
+              ))}
             </select>
           </div>
 
+          {/* Estado */}
+          <div className="flex items-center gap-2 mt-2">
+            <input
+              type="checkbox"
+              checked={form.activo}
+              onChange={(e) => setForm({ ...form, activo: e.target.checked })}
+            />
+            <span className="text-sm">Activo</span>
+          </div>
+
+          <div className="flex justify-end gap-2 pt-3">
+            <button
+              onClick={() => setModalOpen(false)}
+              className="px-4 py-2 rounded-xl border border-slate-300 dark:border-slate-700"
+            >
+              Cancelar
+            </button>
+
+            <button
+              onClick={saveUser}
+              className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white"
+            >
+              {editMode ? "Guardar cambios" : "Crear usuario"}
+            </button>
+          </div>
         </div>
       </Modal>
     </div>
