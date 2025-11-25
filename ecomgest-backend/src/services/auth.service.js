@@ -7,9 +7,17 @@ import { getRequestMeta } from "../middlewares/audit.middleware.js";
 
 //
 // =======================================================
-// LOGIN MULTI-EMPRESA
+// LOGIN MULTI-EMPRESA (VERSIÓN CORREGIDA Y OPTIMIZADA)
 // =======================================================
 //
+
+import supabase from "../config/supabase.js";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+
+import { registerAudit } from "./audit.service.js";
+import { getRequestMeta } from "../middlewares/audit.middleware.js";
+
 export async function loginService(req) {
   const correo = req.body.correo || req.body.email;
   const contrasena = req.body.contrasena || req.body.password;
@@ -72,31 +80,31 @@ export async function loginService(req) {
   }
 
   // -------------------------
-  // EXTRAER EMPRESAS + ROLES DEL USUARIO
+  // OBTENER EMPRESAS + ROLES DEL USUARIO
   // -------------------------
-
   console.log("🟣 DEBUG → User ID:", user.id);
 
   const { data: empresaRoles, error: empresaError } = await supabase
     .from("empresa_usuario_roles")
-    .select(
-      `
-        empresa_id,
-        rol_id,
-        empresas ( nombre ),
-        roles ( nombre )
-      `
-    )
+    .select(`
+      empresa_id,
+      rol_id,
+      empresas ( nombre ),
+      roles ( nombre )
+    `)
     .eq("usuario_id", user.id);
 
-    console.log("🧪 DEBUG empresaError:", empresaError);
-    console.log("🧪 DEBUG empresaRoles RAW:", empresaRoles);
-
+  console.log("🧪 DEBUG empresaError:", empresaError);
+  console.log("🧪 DEBUG empresaRoles RAW:", empresaRoles);
 
   if (empresaError) {
-    return { status: 500, error: "Error al cargar las empresas del usuario." };
+    return {
+      status: 500,
+      error: "Error al cargar las empresas del usuario."
+    };
   }
 
+  // Normaliza la data
   const empresasFormateadas = empresaRoles.map((item) => ({
     empresa_id: item.empresa_id,
     empresa_nombre: item.empresas?.nombre || null,
@@ -105,13 +113,24 @@ export async function loginService(req) {
   }));
 
   // -------------------------
-  // GENERAR TOKEN GENERAL
-  // (PASO 2 → generaremos tokens por empresa)
+  // EMPRESA Y ROL INICIAL
+  // -------------------------
+  const empresaInicial = empresasFormateadas[0] || {};
+
+  console.log("🟪 Empresa inicial asignada al token:", empresaInicial);
+
+  // -------------------------
+  // GENERAR TOKEN COMPLETO (MULTIEMPRESA)
   // -------------------------
   const token = jwt.sign(
     {
       id: user.id,
       correo: user.correo,
+
+      // 🔥 INYECCIÓN QUE SOLUCIONA TODO
+      empresa_id: empresaInicial.empresa_id || null,
+      rol_id: empresaInicial.rol_id || null,
+      rol_nombre: empresaInicial.rol_nombre || null
     },
     process.env.JWT_SECRET,
     { expiresIn: "8h" }
@@ -123,7 +142,11 @@ export async function loginService(req) {
   await registerAudit({
     userId: user.id,
     action: "LOGIN_SUCCESS",
-    details: { correo },
+    details: {
+      correo,
+      empresa_inicial: empresaInicial.empresa_id,
+      rol_inicial: empresaInicial.rol_id,
+    },
     ip,
     userAgent,
   });
@@ -140,12 +163,13 @@ export async function loginService(req) {
         nombre_completo: user.nombre_completo,
         correo: user.correo,
         activo: user.activo,
-        empresas: empresasFormateadas, // 🔥 Multi-empresa aquí
+        empresas: empresasFormateadas, // Todas las empresas
       },
       token,
     },
   };
 }
+
 
 //
 // =======================================================
