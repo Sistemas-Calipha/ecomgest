@@ -1,8 +1,6 @@
+// src/routes/users.routes.js
 import Router from "express";
 import { verifyToken } from "../middlewares/auth.middleware.js";
-
-import { authorizePermission } from "../middlewares/permissions.middleware.js";
-
 
 import {
   listUsersController,
@@ -15,22 +13,22 @@ import {
 
 const router = Router();
 
-// Lista completa - permiso ver_usuarios
-router.get("/", verifyToken, authorizePermission("ver_usuarios"), listUsersController);
+// Lista usuarios
+router.get("/", verifyToken, listUsersController);
 
-// Crear usuario - permiso crear_usuario
-router.post("/", verifyToken, authorizePermission("crear_usuario"), createUserController);
+// Crear usuario
+router.post("/", verifyToken, createUserController);
 
-// Detalle usuario - permiso ver_usuarios
-router.get("/:id", verifyToken, authorizePermission("ver_usuarios"), getUserController);
+// Obtener usuario por ID
+router.get("/:id", verifyToken, getUserController);
 
-// Actualizar usuario - permiso editar_usuario
-router.put("/:id", verifyToken, authorizePermission("editar_usuario"), updateUserController);
+// Actualizar usuario
+router.put("/:id", verifyToken, updateUserController);
 
-// Cambiar estado (activar/desactivar) - permiso desactivar_usuario
-router.patch("/:id/state", verifyToken, authorizePermission("desactivar_usuario"), updateUserStateController);
+// Cambiar estado
+router.patch("/:id/state", verifyToken, updateUserStateController);
 
-// Reset password - permiso editar_usuario
-router.post("/:id/reset-password", verifyToken, authorizePermission("editar_usuario"), resetPasswordController);
+// Reset password
+router.post("/:id/reset-password", verifyToken, resetPasswordController);
 
 export default router;

@@ -1,6 +1,6 @@
+// src/routes/roles.routes.js
 import Router from "express";
 import { verifyToken } from "../middlewares/auth.middleware.js";
-import { authorizePermission } from "../middlewares/permissions.middleware.js";
 
 import {
   listRolesController,
@@ -11,12 +11,9 @@ import {
 
 const router = Router();
 
-router.get("/", verifyToken, authorizePermission("ver_roles"), listRolesController);
-
-router.post("/", verifyToken, authorizePermission("crear_rol"), createRoleController);
-
-router.put("/:id", verifyToken, authorizePermission("editar_rol"), updateRoleController);
-
-router.patch("/:id/state", verifyToken, authorizePermission("activar_rol"), updateRoleStateController);
+router.get("/", verifyToken, listRolesController);
+router.post("/", verifyToken, createRoleController);
+router.put("/:id", verifyToken, updateRoleController);
+router.patch("/:id/state", verifyToken, updateRoleStateController);
 
 export default router;
