@@ -1,84 +1,88 @@
-// src/services/companies.service.js
+// ======================================================================
+//  src/services/companies.service.js
+//  Servicios para la gestión de Empresas
+// ======================================================================
+
 import supabase from "../config/supabase.js";
 
-// ======================================================
-// GET ALL COMPANIES DEL USUARIO ACTUAL
-// ======================================================
-export const getCompaniesService = async (empresa_id) => {
+// ----------------------------------------------------------------------
+//  Obtener todas las empresas (para panel central)
+// ----------------------------------------------------------------------
+export async function getCompaniesService() {
   const { data, error } = await supabase
     .from("empresas")
-    .select("*")
-    .eq("id", empresa_id) // ← SOLO la empresa del usuario logueado
-    .order("creado_en", { ascending: true });
+    .select("id, nombre, cuit, plan, estado, created_at")
+    .order("nombre", { ascending: true });
 
-  if (error) throw new Error(error.message);
+  if (error) {
+    console.error("❌ getCompaniesService error:", error.message);
+    throw error;
+  }
+
+  return data || [];
+}
+
+// ----------------------------------------------------------------------
+//  Crear una empresa
+// ----------------------------------------------------------------------
+export async function createCompanyService({ nombre, cuit, plan, estado }) {
+  const payload = {
+    nombre,
+    cuit: cuit || null,
+    plan: plan || null,
+    estado: estado || "activa",
+  };
+
+  const { data, error } = await supabase
+    .from("empresas")
+    .insert([payload])
+    .select("id, nombre, cuit, plan, estado, created_at")
+    .single();
+
+  if (error) {
+    console.error("❌ createCompanyService error:", error.message);
+    throw error;
+  }
+
   return data;
-};
+}
 
-// ======================================================
-// GET COMPANY BY ID
-// ======================================================
-export const getCompanyByIdService = async (id) => {
+// ----------------------------------------------------------------------
+//  Actualizar empresa
+// ----------------------------------------------------------------------
+export async function updateCompanyService(id, { nombre, cuit, plan, estado }) {
+  const payload = {
+    ...(nombre !== undefined && { nombre }),
+    ...(cuit !== undefined && { cuit }),
+    ...(plan !== undefined && { plan }),
+    ...(estado !== undefined && { estado }),
+  };
+
   const { data, error } = await supabase
     .from("empresas")
-    .select("*")
+    .update(payload)
     .eq("id", id)
+    .select("id, nombre, cuit, plan, estado, created_at")
     .single();
 
-  if (error) throw new Error(error.message);
+  if (error) {
+    console.error("❌ updateCompanyService error:", error.message);
+    throw error;
+  }
+
   return data;
-};
+}
 
-// ======================================================
-// CREATE COMPANY
-// ======================================================
-export const createCompanyService = async ({ nombre, cuit, plan, estado }) => {
-  const { data, error } = await supabase
-    .from("empresas")
-    .insert([
-      {
-        nombre,
-        cuit,
-        plan,
-        estado,
-      },
-    ])
-    .select()
-    .single();
-
-  if (error) throw new Error(error.message);
-  return data;
-};
-
-// ======================================================
-// UPDATE COMPANY
-// ======================================================
-export const updateCompanyService = async (
-  id,
-  { nombre, cuit, plan, estado }
-) => {
-  const { data, error } = await supabase
-    .from("empresas")
-    .update({
-      nombre,
-      cuit,
-      plan,
-      estado,
-    })
-    .eq("id", id)
-    .select()
-    .single();
-
-  if (error) throw new Error(error.message);
-  return data;
-};
-
-// ======================================================
-// DELETE COMPANY
-// ======================================================
-export const deleteCompanyService = async (id) => {
+// ----------------------------------------------------------------------
+//  Eliminar empresa
+// ----------------------------------------------------------------------
+export async function deleteCompanyService(id) {
   const { error } = await supabase.from("empresas").delete().eq("id", id);
 
-  if (error) throw new Error(error.message);
+  if (error) {
+    console.error("❌ deleteCompanyService error:", error.message);
+    throw error;
+  }
+
   return true;
-};
+}

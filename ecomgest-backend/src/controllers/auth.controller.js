@@ -1,14 +1,12 @@
 // ======================================================================
 //  src/controllers/auth.controller.js
+//  Controladores de autenticación multiempresa
 // ======================================================================
 
 import {
   loginService,
-  registerService
+  selectCompanyService,
 } from "../services/auth.service.js";
-
-import supabase from "../config/supabase.js";
-import jwt from "jsonwebtoken";
 
 // ======================================================================
 //  GENERAR HASH (TEST)
@@ -32,12 +30,12 @@ export async function loginController(req, res) {
     console.log("🟡 BODY RECIBIDO EN LOGIN:", req.body);
 
     const result = await loginService(req);
-
+    // loginService devuelve: { status, error } o { status, data }
     if (result.error) {
-      return res.status(400).json({ mensaje: result.error });
+      return res.status(result.status || 400).json({ mensaje: result.error });
     }
 
-    return res.json(result);
+    return res.status(result.status || 200).json(result);
   } catch (error) {
     console.error("❌ Error en loginController:", error);
     return res.status(500).json({ error: "Error interno en login" });
@@ -45,37 +43,27 @@ export async function loginController(req, res) {
 }
 
 // ======================================================================
-//  REGISTRO
+//  REGISTRO (stub temporal)
 // ======================================================================
 export async function registerController(req, res) {
   try {
-    const result = await registerService(req);
-
-    if (result.error) {
-      return res.status(400).json({ mensaje: result.error });
-    }
-
-    return res.json(result);
+    return res
+      .status(501)
+      .json({ mensaje: "Registro de usuarios aún no implementado." });
   } catch (error) {
     console.error("❌ Error en registerController:", error);
     return res.status(500).json({ error: "Error interno en registro" });
   }
 }
 
-
 // ======================================================================
-//  CREAR CUENTA DEMO
+//  CREAR CUENTA DEMO (stub temporal)
 // ======================================================================
 export async function demoController(req, res) {
   try {
-    const result = await createDemoAccount(req);
-
-    if (result.error) {
-      return res.status(result.status).json({ mensaje: result.error });
-    }
-
-    return res.status(result.status).json(result.data);
-
+    return res
+      .status(501)
+      .json({ mensaje: "Creación de cuenta demo aún no implementada." });
   } catch (err) {
     console.error("❌ ERROR DEMO:", err.message);
     return res.status(500).json({ mensaje: "Error interno en demo" });
@@ -94,21 +82,20 @@ export async function testTokenController(req, res) {
         id: req.user.id,
         empresa_id: req.user.empresa_id ?? null,
         rol_id: req.user.rol_id ?? null,
-        rol_nombre: req.user.rol_nombre ?? null
-      }
+        rol_nombre: req.user.rol_nombre ?? null,
+      },
     });
-
   } catch (err) {
     console.error("❌ ERROR VALIDANDO TOKEN:", err.message);
     return res.status(401).json({
       mensaje: "Token inválido",
-      error: err.message
+      error: err.message,
     });
   }
 }
 
 // ======================================================================
-//  SELECT COMPANY
+//  SELECT COMPANY  (usa el service que ya tienes)
 // ======================================================================
 export async function selectCompanyController(req, res) {
   try {
@@ -121,61 +108,26 @@ export async function selectCompanyController(req, res) {
 
     if (!userId) {
       return res.status(401).json({
-        error: "No se pudo identificar al usuario desde el token."
+        error: "No se pudo identificar al usuario desde el token.",
       });
     }
 
-    const { data: relacion, error: relacionError } = await supabase
-      .from("empresa_usuario_roles")
-      .select("empresa_id, rol_id, roles(nombre)")
-      .eq("usuario_id", userId)
-      .eq("empresa_id", companyId)
-      .single();
+    // Inyectamos userId en el body para que el service lo use
+    req.body.userId = userId;
 
-    if (relacionError) {
-      console.error("❌ Error consultando relación:", relacionError);
-      return res.status(500).json({
-        error: "Error al consultar la relación usuario-empresa."
-      });
+    const result = await selectCompanyService(req);
+
+    if (result.error) {
+      return res.status(result.status || 400).json({ mensaje: result.error });
     }
 
-    if (!relacion) {
-      return res.status(403).json({
-        error: "El usuario no tiene acceso a esta empresa."
-      });
-    }
-
-    const nuevoToken = jwt.sign(
-      {
-        id: userId,
-        empresa_id: relacion.empresa_id,
-        rol_id: relacion.rol_id,
-        rol_nombre: relacion.roles.nombre
-      },
-      process.env.JWT_SECRET,
-      { expiresIn: "8h" }
-    );
-
-    // AUDITORÍA
-    await registrarAccion(req, "SELECT_COMPANY", {
-      empresa_id: relacion.empresa_id,
-      rol: relacion.roles.nombre
-    });
-
-    return res.json({
-      ok: true,
-      mensaje: "Empresa seleccionada correctamente.",
-      empresa_id: relacion.empresa_id,
-      rol_id: relacion.rol_id,
-      rol_nombre: relacion.roles.nombre,
-      token: nuevoToken
-    });
-
+    // selectCompanyService devuelve { status, data: {...} }
+    return res.status(result.status || 200).json(result.data);
   } catch (error) {
     console.error("❌ ERROR selectCompanyController:", error.message);
     return res.status(500).json({
       error: "Error interno al seleccionar empresa.",
-      detalle: error.message
+      detalle: error.message,
     });
   }
 }
