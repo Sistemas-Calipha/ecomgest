@@ -5,6 +5,8 @@ export function authorizePermission(permissionName) {
     try {
       // Validar existencia de rol
       const roleId = req.user?.rol_id;
+      
+      console.log("DEBUG req.user:", req.user);
 
       if (!roleId || typeof roleId !== "number") {
         return res.status(403).json({
