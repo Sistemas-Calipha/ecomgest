@@ -1,46 +1,69 @@
 import supabase from "../config/supabase.js";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import { registerAudit } from "./audit.service.js";
 import { getRequestMeta } from "../middlewares/audit.middleware.js";
 
-/**
- * Obtener lista de usuarios
- */
+// ======================================================================
+//  LIST USERS (multiempresa)
+// ======================================================================
 export async function listUsers(req) {
   const { ip, userAgent } = getRequestMeta(req);
+  const empresaId = req.user.empresa_id;
 
-  const { data, error } = await supabase
-    .from("usuarios")
-    .select("id, nombre_completo, correo, rol_id, activo, creado_en")
-    .order("creado_en", { ascending: false });
+  // 1. Obtenemos usuarios vinculados a la empresa
+  const { data: rel, error: relError } = await supabase
+    .from("empresa_usuario_roles")
+    .select(`
+      usuario_id,
+      rol_id,
+      roles ( nombre ),
+      usuarios (
+        id,
+        nombre_completo,
+        correo,
+        activo,
+        created_at
+      )
+    `)
+    .eq("empresa_id", empresaId);
 
-  if (error) {
+  if (relError) {
     await registerAudit({
       userId: req.user.id,
       action: "USERS_LIST_ERROR",
-      details: { error: error.message },
-      ip,
-      userAgent,
+      details: { error: relError.message },
+      ip, userAgent
     });
 
     return { status: 500, error: "Error al obtener usuarios." };
   }
 
+  // 2. Formateamos
+  const users = rel.map((row) => ({
+    id: row.usuarios.id,
+    nombre_completo: row.usuarios.nombre_completo,
+    correo: row.usuarios.correo,
+    activo: row.usuarios.activo,
+    rol_id: row.rol_id,
+    rol_nombre: row.roles?.nombre || null,
+    creado_en: row.usuarios.created_at
+  }));
+
   await registerAudit({
     userId: req.user.id,
     action: "USERS_LIST_OK",
-    details: { count: data.length },
-    ip,
-    userAgent,
+    details: { count: users.length },
+    ip, userAgent
   });
 
-  return { status: 200, data: { users: data } };
+  return { status: 200, data: { users } };
 }
 
-/**
- * Crear usuario nuevo
- */
+// ======================================================================
+//  CREATE USER
+// ======================================================================
 export async function createUser(req) {
+  const empresaId = req.user.empresa_id;
   const { nombre_completo, correo, contrasena, rol_id, activo = true } = req.body;
   const { ip, userAgent } = getRequestMeta(req);
 
@@ -48,6 +71,7 @@ export async function createUser(req) {
     return { status: 400, error: "Nombre, correo y rol son obligatorios." };
   }
 
+  // Duplicado
   const { data: exists } = await supabase
     .from("usuarios")
     .select("id")
@@ -58,36 +82,48 @@ export async function createUser(req) {
     return { status: 409, error: "El correo ya está registrado." };
   }
 
-  const finalPassword = contrasena || Math.random().toString(36).slice(-8);
+  // Crear contraseña
+  const finalPassword = contrasena || Math.random().toString(36).slice(-10);
   const hashed = await bcrypt.hash(finalPassword, 10);
 
-  const { data, error } = await supabase
+  // Crear usuario
+  const { data: user, error: userError } = await supabase
     .from("usuarios")
     .insert([
       {
         nombre_completo,
         correo,
         contrasena: hashed,
-        rol_id,
-        activo,
-      },
+        activo
+      }
     ])
-    .select();
+    .select()
+    .single();
 
-  if (error) {
-    return { status: 500, error: "Error interno del servidor." };
+  if (userError) {
+    return { status: 500, error: "Error creando usuario." };
+  }
+
+  // Asignar rol + empresa (multiempresa)
+  const { error: relError } = await supabase
+    .from("empresa_usuario_roles")
+    .insert([
+      {
+        usuario_id: user.id,
+        empresa_id: empresaId,
+        rol_id
+      }
+    ]);
+
+  if (relError) {
+    return { status: 500, error: "Error asignando rol al usuario." };
   }
 
   await registerAudit({
     userId: req.user.id,
     action: "USER_CREATED",
-    details: {
-      new_user_id: data[0].id,
-      correo: data[0].correo,
-      rol_id,
-    },
-    ip,
-    userAgent,
+    details: { new_user_id: user.id, correo, rol_id },
+    ip, userAgent
   });
 
   return {
@@ -95,116 +131,115 @@ export async function createUser(req) {
     data: {
       message: "Usuario creado exitosamente.",
       user: {
-        id: data[0].id,
-        nombre_completo: data[0].nombre_completo,
-        correo: data[0].correo,
-        rol_id: data[0].rol_id,
-        activo: data[0].activo,
+        id: user.id,
+        nombre_completo: user.nombre_completo,
+        correo: user.correo,
+        activo: user.activo,
+        rol_id,
       },
-      generated_password: contrasena ? null : finalPassword,
-    },
+      generated_password: contrasena ? null : finalPassword
+    }
   };
 }
 
-/**
- * Detalle de un usuario
- */
+// ======================================================================
+//  GET USER
+// ======================================================================
 export async function getUser(req) {
   const { id } = req.params;
+  const empresaId = req.user.empresa_id;
   const { ip, userAgent } = getRequestMeta(req);
 
   const { data, error } = await supabase
-    .from("usuarios")
-    .select("id, nombre_completo, correo, rol_id, activo, creado_en")
-    .eq("id", id)
+    .from("empresa_usuario_roles")
+    .select(`
+      rol_id,
+      roles ( nombre ),
+      usuarios (
+        id,
+        nombre_completo,
+        correo,
+        activo,
+        created_at
+      )
+    `)
+    .eq("empresa_id", empresaId)
+    .eq("usuario_id", id)
     .single();
 
   if (error || !data) {
-    await registerAudit({
-      userId: req.user.id,
-      action: "USER_NOT_FOUND",
-      details: { id },
-      ip,
-      userAgent,
-    });
-
     return { status: 404, error: "Usuario no encontrado." };
   }
 
-  await registerAudit({
-    userId: req.user.id,
-    action: "USER_DETAIL_OK",
-    details: { id },
-    ip,
-    userAgent,
-  });
-
-  return { status: 200, data: { user: data } };
+  return {
+    status: 200,
+    data: {
+      user: {
+        id: data.usuarios.id,
+        nombre_completo: data.usuarios.nombre_completo,
+        correo: data.usuarios.correo,
+        activo: data.usuarios.activo,
+        rol_id: data.rol_id,
+        rol_nombre: data.roles?.nombre || null,
+        creado_en: data.usuarios.created_at
+      }
+    }
+  };
 }
 
-/**
- * Actualizar usuario
- */
+// ======================================================================
+//  UPDATE USER
+// ======================================================================
 export async function updateUser(req) {
   const { id } = req.params;
+  const empresaId = req.user.empresa_id;
   const { nombre_completo, correo, rol_id, activo } = req.body;
-  const { ip, userAgent } = getRequestMeta(req);
 
   const fields = {};
   if (nombre_completo !== undefined) fields.nombre_completo = nombre_completo;
   if (correo !== undefined) fields.correo = correo;
-  if (rol_id !== undefined) fields.rol_id = rol_id;
   if (activo !== undefined) fields.activo = activo;
 
-  if (Object.keys(fields).length === 0) {
-    return { status: 400, error: "No hay campos para actualizar." };
-  }
-
-  const { data, error } = await supabase
+  // Actualizar usuario
+  const { data: user, error: userError } = await supabase
     .from("usuarios")
     .update(fields)
     .eq("id", id)
     .select()
     .single();
 
-  if (error) {
-    return { status: 500, error: "Error interno del servidor." };
-  }
+  if (userError) return { status: 500, error: "Error actualizando usuario." };
 
-  await registerAudit({
-    userId: req.user.id,
-    action: "USER_UPDATED",
-    details: { id, changes: fields },
-    ip,
-    userAgent,
-  });
+  // Actualizar rol
+  if (rol_id !== undefined) {
+    await supabase
+      .from("empresa_usuario_roles")
+      .update({ rol_id })
+      .eq("usuario_id", id)
+      .eq("empresa_id", empresaId);
+  }
 
   return {
     status: 200,
     data: {
       message: "Usuario actualizado correctamente.",
       user: {
-        id: data.id,
-        nombre_completo: data.nombre_completo,
-        correo: data.correo,
-        rol_id: data.rol_id,
-        activo: data.activo,
-      },
-    },
+        id: user.id,
+        nombre_completo: user.nombre_completo,
+        correo: user.correo,
+        activo: user.activo,
+        rol_id,
+      }
+    }
   };
 }
 
-/**
- * Cambiar estado (activar / desactivar)
- */
+// ======================================================================
+//  UPDATE USER STATE
+// ======================================================================
 export async function updateUserState(req) {
   const { id } = req.params;
   const { activo } = req.body;
-  const { ip, userAgent } = getRequestMeta(req);
-
-  if (activo === undefined) {
-    return { status: 400, error: "Debe indicar el estado 'activo'." };
-  }
 
   const { data, error } = await supabase
     .from("usuarios")
@@ -213,39 +248,27 @@ export async function updateUserState(req) {
     .select()
     .single();
 
-  if (error) {
-    return { status: 500, error: "Error interno del servidor." };
-  }
-
-  await registerAudit({
-    userId: req.user.id,
-    action: "USER_STATE_CHANGED",
-    details: { id, active: activo },
-    ip,
-    userAgent,
-  });
+  if (error) return { status: 500, error: "Error cambiando estado." };
 
   return {
     status: 200,
     data: {
-      message: `Usuario ${activo ? "activado" : "desactivado"} correctamente.`,
+      message: `Usuario ${activo ? "activado" : "desactivado"}.`,
       user: {
         id: data.id,
         nombre_completo: data.nombre_completo,
         correo: data.correo,
-        rol_id: data.rol_id,
-        activo: data.activo,
-      },
-    },
+        activo: data.activo
+      }
+    }
   };
 }
 
-/**
- * Resetear contraseña
- */
+// ======================================================================
+//  RESET PASSWORD
+// ======================================================================
 export async function resetPassword(req) {
   const { id } = req.params;
-  const { ip, userAgent } = getRequestMeta(req);
 
   const newPassword = Math.random().toString(36).slice(-10);
   const hashed = await bcrypt.hash(newPassword, 10);
@@ -257,30 +280,18 @@ export async function resetPassword(req) {
     .select()
     .single();
 
-  if (error) {
-    return { status: 500, error: "Error interno del servidor." };
-  }
-
-  await registerAudit({
-    userId: req.user.id,
-    action: "USER_PASSWORD_RESET",
-    details: { id },
-    ip,
-    userAgent,
-  });
+  if (error) return { status: 500, error: "Error reseteando contraseña." };
 
   return {
     status: 200,
     data: {
       message: "Contraseña reseteada correctamente.",
+      new_password: newPassword,
       user: {
         id: data.id,
         nombre_completo: data.nombre_completo,
-        correo: data.correo,
-        rol_id: data.rol_id,
-        activo: data.activo,
-      },
-      new_password: newPassword,
-    },
+        correo: data.correo
+      }
+    }
   };
 }
