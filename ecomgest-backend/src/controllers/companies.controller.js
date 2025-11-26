@@ -1,4 +1,7 @@
-// src/controllers/companies.controller.js
+// ======================================================================
+//  src/controllers/companies.controller.js
+//  Controladores para la gestión de Empresas (multiempresa)
+// ======================================================================
 
 import {
   getCompaniesService,
@@ -7,87 +10,102 @@ import {
   deleteCompanyService,
 } from "../services/companies.service.js";
 
-// =====================================
-// GET /companies  (solo empresas del usuario actual)
-// =====================================
+// ======================================================================
+//  GET /companies
+//  Lista TODAS las empresas (solo para administradores globales)
+// ======================================================================
 export async function getCompanies(req, res) {
   try {
-    const empresa_id = req.user.empresa_id; // viene del JWT
+    const empresas = await getCompaniesService(); // Sin empresa_id
+    return res.status(200).json({ companies: empresas });
 
-    const empresas = await getCompaniesService(empresa_id);
-
-    return res.json({ companies: empresas });
   } catch (err) {
     console.error("❌ Error obteniendo empresas:", err.message);
-    return res.status(500).json({ error: "Error obteniendo empresas" });
+    return res.status(500).json({
+      error: "Error obteniendo empresas"
+    });
   }
 }
 
-// =====================================
-// POST /companies
-// =====================================
+// ======================================================================
+//  POST /companies
+//  Crear nueva empresa
+// ======================================================================
 export async function createCompany(req, res) {
   try {
     const { nombre, cuit, plan, estado } = req.body;
 
     if (!nombre) {
-      return res.status(400).json({ error: "El nombre es obligatorio" });
+      return res.status(400).json({ error: "El nombre es obligatorio." });
     }
 
-    const nueva = await createCompanyService({
+    const empresaNueva = await createCompanyService({
       nombre,
       cuit,
       plan,
-      estado,
+      estado
     });
 
-    return res.json({
-      mensaje: "Empresa creada",
-      empresa: nueva,
+    return res.status(201).json({
+      mensaje: "Empresa creada correctamente.",
+      empresa: empresaNueva
     });
+
   } catch (err) {
     console.error("❌ Error creando empresa:", err.message);
-    return res.status(500).json({ error: "Error creando empresa" });
+    return res.status(500).json({
+      error: "Error creando empresa."
+    });
   }
 }
 
-// =====================================
-// PUT /companies/:id
-// =====================================
+// ======================================================================
+//  PUT /companies/:id
+//  Actualizar datos de empresa
+// ======================================================================
 export async function updateCompany(req, res) {
   try {
     const { id } = req.params;
     const { nombre, cuit, plan, estado } = req.body;
 
-    const actualizada = await updateCompanyService(id, {
+    const empresaActualizada = await updateCompanyService(id, {
       nombre,
       cuit,
       plan,
-      estado,
+      estado
     });
 
-    return res.json({
-      mensaje: "Empresa actualizada",
-      empresa: actualizada,
+    return res.status(200).json({
+      mensaje: "Empresa actualizada correctamente.",
+      empresa: empresaActualizada
     });
+
   } catch (err) {
     console.error("❌ Error actualizando empresa:", err.message);
-    return res.status(500).json({ error: "Error actualizando empresa" });
+    return res.status(500).json({
+      error: "Error actualizando empresa."
+    });
   }
 }
 
-// =====================================
-// DELETE /companies/:id
-// =====================================
+// ======================================================================
+//  DELETE /companies/:id
+//  Eliminar empresa
+// ======================================================================
 export async function deleteCompany(req, res) {
   try {
     const { id } = req.params;
 
     await deleteCompanyService(id);
 
-    return res.json({ mensaje: "Empresa eliminada" });
+    return res.status(200).json({
+      mensaje: "Empresa eliminada correctamente."
+    });
+
   } catch (err) {
     console.error("❌ Error eliminando empresa:", err.message);
-    return res.status(500).json({ error: "Error eliminando empresa" });
+    return res.status(500).json({
+      error: "Error eliminando empresa."
+    });
   }
 }

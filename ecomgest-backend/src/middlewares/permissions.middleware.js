@@ -1,16 +1,15 @@
 import supabase from "../config/supabase.js";
 
-/**
- * Middleware que valida si el rol del usuario tiene un permiso específico
- * @param {string} permissionName - Nombre del permiso requerido
- */
 export function authorizePermission(permissionName) {
   return async (req, res, next) => {
     try {
-      const roleId = req.user?.rol_id || req.usuario?.rol_id;
+      // Validar existencia de rol
+      const roleId = req.user?.rol_id;
 
-      if (!roleId) {
-        return res.status(401).json({ message: "User role not found in token." });
+      if (!roleId || typeof roleId !== "number") {
+        return res.status(403).json({
+          message: "No hay un rol seleccionado en el token."
+        });
       }
 
       // Buscar permiso por nombre
@@ -22,10 +21,12 @@ export function authorizePermission(permissionName) {
         .single();
 
       if (errorPerm || !permission) {
-        return res.status(403).json({ message: "Permission does not exist or is inactive." });
+        return res.status(403).json({
+          message: "El permiso no existe o está inactivo."
+        });
       }
 
-      // Verificar si el rol tiene asignado ese permiso
+      // Validar si el rol tiene ese permiso
       const { data: assigned, error: errorAssigned } = await supabase
         .from("roles_permisos")
         .select("id")
@@ -33,18 +34,21 @@ export function authorizePermission(permissionName) {
         .eq("permiso_id", permission.id)
         .limit(1);
 
-      if (errorAssigned) {
-        throw errorAssigned;
-      }
+      if (errorAssigned) throw errorAssigned;
 
       if (!assigned || assigned.length === 0) {
-        return res.status(403).json({ message: "You do not have this permission." });
+        return res.status(403).json({
+          message: "No tienes este permiso."
+        });
       }
 
       next();
+
     } catch (err) {
-      console.error("❌ Error in authorizePermission middleware:", err);
-      res.status(500).json({ message: "Internal server error in permission validation." });
+      console.error("❌ Error in authorizePermission:", err);
+      res.status(500).json({
+        message: "Internal error in permission middleware."
+      });
     }
   };
 }
