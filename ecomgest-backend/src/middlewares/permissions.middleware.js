@@ -1,55 +1,73 @@
+// ======================================================================
+//  src/middlewares/permissions.middleware.js
+//  Middleware para validar permisos reales del usuario según su empresa
+// ======================================================================
+
 import supabase from "../config/supabase.js";
 
-export function authorizePermission(permissionName) {
+// ======================================================================
+//  authorizePermission(nombre_permiso)
+//  Valida que el usuario tenga ese permiso dentro de su empresa actual
+// ======================================================================
+export function authorizePermission(requiredPermission) {
   return async (req, res, next) => {
     try {
-      // Validar existencia de rol
-      const roleId = req.user?.rol_id;
-      
-      console.log("DEBUG req.user:", req.user);
+      const userId = req.user?.id;
+      const empresaId = req.user?.empresa_id;
 
-      if (!roleId || typeof roleId !== "number") {
-        return res.status(403).json({
-          message: "No hay un rol seleccionado en el token."
+      if (!userId || !empresaId) {
+        return res.status(401).json({
+          mensaje: "Token inválido o falta empresa seleccionada."
         });
       }
 
-      // Buscar permiso por nombre
-      const { data: permission, error: errorPerm } = await supabase
-        .from("permisos")
-        .select("id")
-        .eq("nombre", permissionName)
-        .eq("activo", true)
+      // Obtener rol del usuario en esta empresa
+      const { data: rel, error: relError } = await supabase
+        .from("empresa_usuario_roles")
+        .select("rol_id")
+        .eq("usuario_id", userId)
+        .eq("empresa_id", empresaId)
         .single();
 
-      if (errorPerm || !permission) {
+      if (relError || !rel) {
         return res.status(403).json({
-          message: "El permiso no existe o está inactivo."
+          mensaje: "El usuario no tiene un rol en esta empresa."
         });
       }
 
-      // Validar si el rol tiene ese permiso
-      const { data: assigned, error: errorAssigned } = await supabase
+      const rolId = rel.rol_id;
+
+      // Buscar permisos del rol
+      const { data: perms, error: permsError } = await supabase
         .from("roles_permisos")
-        .select("id")
-        .eq("rol_id", roleId)
-        .eq("permiso_id", permission.id)
-        .limit(1);
+        .select(`
+          permisos ( nombre )
+        `)
+        .eq("rol_id", rolId);
 
-      if (errorAssigned) throw errorAssigned;
-
-      if (!assigned || assigned.length === 0) {
-        return res.status(403).json({
-          message: "No tienes este permiso."
+      if (permsError) {
+        return res.status(500).json({
+          mensaje: "Error validando permisos."
         });
       }
 
+      // Lista de permisos que tiene el usuario
+      const permisos = perms.map(p => p.permisos?.nombre);
+
+      // Validar permiso requerido
+      if (!permisos.includes(requiredPermission)) {
+        return res.status(403).json({
+          mensaje: `No tienes el permiso requerido: ${requiredPermission}`
+        });
+      }
+
+      // Todo OK
       next();
 
     } catch (err) {
-      console.error("❌ Error in authorizePermission:", err);
-      res.status(500).json({
-        message: "Internal error in permission middleware."
+      console.error("❌ Error en authorizePermission:", err);
+      return res.status(500).json({
+        mensaje: "Internal error in permission middleware."
       });
     }
   };
