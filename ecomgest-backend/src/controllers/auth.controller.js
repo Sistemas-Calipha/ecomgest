@@ -1,17 +1,14 @@
 // ======================================================================
 //  src/controllers/auth.controller.js
-//  Controladores de autenticación y selección de empresa
 // ======================================================================
 
 import {
   loginService,
-  registerService,
-  createDemoAccount
+  registerService
 } from "../services/auth.service.js";
 
 import supabase from "../config/supabase.js";
 import jwt from "jsonwebtoken";
-import { registrarAccion } from "../utils/audit.js";  // ✅ Import correcto
 
 // ======================================================================
 //  GENERAR HASH (TEST)
@@ -37,22 +34,13 @@ export async function loginController(req, res) {
     const result = await loginService(req);
 
     if (result.error) {
-      return res.status(result.status).json({ mensaje: result.error });
+      return res.status(400).json({ mensaje: result.error });
     }
 
-    // ======================================================
-    // AUDITORÍA — SOLO SI EL LOGIN FUE EXITOSO
-    // ======================================================
-    await registrarAccion(req, "LOGIN", {
-      usuario: result.data.user.correo,
-      usuario_id: result.data.user.id
-    });
-
-    return res.status(result.status).json(result.data);
-
-  } catch (err) {
-    console.error("❌ ERROR LOGIN:", err.message);
-    return res.status(500).json({ mensaje: "Error interno en login" });
+    return res.json(result);
+  } catch (error) {
+    console.error("❌ Error en loginController:", error);
+    return res.status(500).json({ error: "Error interno en login" });
   }
 }
 
@@ -64,16 +52,16 @@ export async function registerController(req, res) {
     const result = await registerService(req);
 
     if (result.error) {
-      return res.status(result.status).json({ mensaje: result.error });
+      return res.status(400).json({ mensaje: result.error });
     }
 
-    return res.status(result.status).json(result.data);
-
-  } catch (err) {
-    console.error("❌ ERROR REGISTRO:", err.message);
-    return res.status(500).json({ mensaje: "Error interno en registro" });
+    return res.json(result);
+  } catch (error) {
+    console.error("❌ Error en registerController:", error);
+    return res.status(500).json({ error: "Error interno en registro" });
   }
 }
+
 
 // ======================================================================
 //  CREAR CUENTA DEMO
